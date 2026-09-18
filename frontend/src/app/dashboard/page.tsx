@@ -1739,174 +1739,73 @@ export default function DashboardPage() {
             </div>
 
             <div className="w-full overflow-auto border rounded-xl shadow-sm bg-white border-slate-200" style={{ height: 'calc(100vh - 175px)', minHeight: 0 }}>
-              <table className="text-[10px] text-left min-w-[3200px] w-full border-separate border-spacing-0">
-                <thead className="sticky top-0 z-30 uppercase tracking-wider font-extrabold shadow-[0_2px_8px_rgba(0,0,0,0.15)]">
-                  <tr className="bg-slate-700 text-white">
-                    <th className="p-3 sticky left-0 z-40 border-r border-b border-slate-600 bg-slate-800 text-white whitespace-nowrap">No.</th>
-                    <th className="py-2 px-2 bg-slate-700 whitespace-nowrap">Date</th>
-                    <th className="py-2 px-2 bg-slate-700 whitespace-nowrap">Month</th>
-                    <th className="py-2 px-2 bg-slate-700 whitespace-nowrap">Accountable</th>
-                    <th className="py-2 px-2 bg-slate-700 whitespace-nowrap">Recruiter Name</th>
-                    <th className="py-2 px-2 bg-slate-700 whitespace-nowrap">Technology (Job Title)</th>
-                    <th className="py-2 px-2 bg-slate-700 whitespace-nowrap">Tech/Non Tech</th>
-                    <th className="py-2 px-2 bg-slate-700 whitespace-nowrap">Opening For</th>
-                    <th className="py-2 px-2 bg-slate-700 whitespace-nowrap">Candidate Name</th>
-                    <th className="py-2 px-2 bg-slate-700 whitespace-nowrap">Source</th>
-                    <th className="py-2 px-2 bg-slate-700 whitespace-nowrap">Status</th>
-                    <th className="py-2 px-2 bg-slate-700 whitespace-nowrap">Contact number</th>
-                    <th className="py-2 px-2 bg-slate-700 whitespace-nowrap">Email ID</th>
-                    <th className="py-2 px-2 bg-slate-700 whitespace-nowrap">Total Experience</th>
-                    <th className="py-2 px-2 bg-slate-700 whitespace-nowrap">Relevant Experience</th>
-                    <th className="py-2 px-2 bg-slate-700 whitespace-nowrap">Current CTC</th>
-                    <th className="py-2 px-2 bg-slate-700 whitespace-nowrap">Expected CTC</th>
-                    <th className="py-2 px-2 bg-slate-700 whitespace-nowrap">Notice Period</th>
-                    <th className="py-2 px-2 bg-slate-700 whitespace-nowrap">Location</th>
-                    <th className="py-2 px-2 bg-slate-700 whitespace-nowrap">Job Change Reason</th>
-                    <th className="py-2 px-2 bg-slate-700 whitespace-nowrap">Recruiter's Remarks</th>
-                    <th className="py-2 px-2 bg-slate-700 whitespace-nowrap">Current Company Name</th>
-                    <th className="py-2 px-2 bg-slate-700 whitespace-nowrap">Interview Mode (1st Round)</th>
-                    <th className="py-2 px-2 bg-slate-700 whitespace-nowrap">1st Round Interview Date</th>
-                    <th className="py-2 px-2 bg-slate-700 whitespace-nowrap">Interviewer (1st Round)</th>
-                    <th className="py-2 px-2 bg-slate-700 whitespace-nowrap">Status (1st Round)</th>
-                    <th className="py-2 px-2 bg-slate-700 whitespace-nowrap">Interview (2nd / Final Round) Date</th>
-                    <th className="py-2 px-2 bg-slate-700 whitespace-nowrap">Interview Mode (2nd Round)</th>
-                    <th className="py-2 px-2 bg-slate-700 whitespace-nowrap">Interviewer (2nd / Final Round)</th>
-                    <th className="py-2 px-2 bg-slate-700 whitespace-nowrap">Status (2nd / Final Round)</th>
-                    <th className="py-2 px-2 bg-slate-700 whitespace-nowrap">Joining Date</th>
-                    <th className="py-2 px-2 bg-slate-700 whitespace-nowrap">CTC Offered</th>
-                    <th className="py-2 px-2 bg-slate-700 whitespace-nowrap">Vendor Name</th>
-                  </tr>
-                </thead>
-                {(() => {
-                  const getVal = (emp: any, keys: string[]) => {
-                    if (!emp) return '-'
-                    for (const k of keys) {
-                      if (emp[k] !== undefined && emp[k] !== null && String(emp[k]).trim() !== '') {
-                        return String(emp[k]).trim()
+              {(() => {
+                const ignoredKeys = ['pending_documents', 'birthday']
+                const allKeysSet = new Set<string>()
+                if (employees.length > 0) {
+                  employees.forEach((emp: any) => {
+                    Object.keys(emp).forEach(k => {
+                      if (!ignoredKeys.includes(k) && k !== '') {
+                        allKeysSet.add(k)
                       }
-                    }
-                    return '-'
-                  }
+                    })
+                  })
+                }
+                const dynamicHeaders = Array.from(allKeysSet)
 
-                  return (
+                return (
+                  <table className="text-[10px] text-left w-full border-separate border-spacing-0 min-w-max">
+                    <thead className="sticky top-0 z-30 uppercase tracking-wider font-extrabold shadow-[0_2px_8px_rgba(0,0,0,0.15)]">
+                      <tr className="bg-slate-700 text-white">
+                        {dynamicHeaders.length > 0 ? (
+                          dynamicHeaders.map((header, hIdx) => (
+                            <th
+                              key={hIdx}
+                              className={`p-3 whitespace-nowrap bg-slate-700 ${
+                                hIdx === 0 ? 'sticky left-0 z-40 bg-slate-800 border-r border-b border-slate-600 text-white font-extrabold' : 'border-b border-slate-600'
+                              }`}
+                            >
+                              {header}
+                            </th>
+                          ))
+                        ) : (
+                          <th className="p-3 bg-slate-700 text-white">No Columns Available</th>
+                        )}
+                      </tr>
+                    </thead>
                     <tbody className={`divide-y ${isDark ? 'divide-blue-955/50' : 'divide-slate-200'}`}>
                       {paginatedEmployees.map((emp, index) => (
-                        <tr key={index} className={`transition-colors hover:bg-blue-50 ${
-                          isDark ? 'text-slate-300' : 'text-slate-800'
-                        }`}>
-                          <td className="py-1.5 px-2 font-semibold sticky left-0 z-20 border-r border-b border-slate-200 bg-slate-50 text-slate-800 whitespace-nowrap">
-                            {getVal(emp, ['employee_id', 'S. No.', 'No.', 'Date', 'id'])}
-                          </td>
-                          <td className="py-1.5 px-2 whitespace-nowrap">
-                            {getVal(emp, ['joining_date', 'Open Date', 'Date', 'Close Date'])}
-                          </td>
-                          <td className="py-1.5 px-2">
-                            {getVal(emp, ['month', 'Month'])}
-                          </td>
-                          <td className="py-1.5 px-2">
-                            {getVal(emp, ['accountable', 'Acountable HR', 'Accountable'])}
-                          </td>
-                          <td className="py-1.5 px-2">
-                            {getVal(emp, ['recruiter_name', 'Recruiter Name'])}
-                          </td>
-                          <td className={`py-1.5 px-2 font-bold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                            {getVal(emp, ['designation', 'Opening Name', 'Technology', 'Job Title', 'Role', 'Specialized'])}
-                          </td>
-                          <td className="py-1.5 px-2">
-                            {getVal(emp, ['tech_non_tech', 'Tech/Non Tech', 'Specialized'])}
-                          </td>
-                          <td className="py-1.5 px-2">
-                            {getVal(emp, ['department', 'Opening For ( Inhouse / Client)', 'Opening For', 'Hiring Type', 'Department', 'Requested By'])}
-                          </td>
-                          <td className={`py-1.5 px-2 font-extrabold ${isDark ? 'text-blue-400' : 'text-blue-650'}`}>
-                            {getVal(emp, ['name', 'Opening Name', 'Candidate Name', 'Name', 'Opening', 'Recruiter Name'])}
-                          </td>
-                          <td className="py-1.5 px-2">
-                            {getVal(emp, ['source', 'Hiring Type', 'Source ✅', 'Source'])}
-                          </td>
-                          <td className="py-1.5 px-2">
-                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
-                              ['Screen Selected', 'Offerd', 'Close'].includes(getVal(emp, ['status', 'Status ( Weekly Status / Current Stage)', 'Status', 'Priority ( High / Medium / Low)'])) 
-                                ? 'bg-blue-500/10 text-blue-450 border border-blue-500/10'
-                                : ['Screen Rejected', 'Not Interested'].includes(getVal(emp, ['status', 'Status ( Weekly Status / Current Stage)', 'Status']))
-                                ? 'bg-red-500/10 text-red-400 border border-red-500/10'
-                                : 'bg-blue-500/10 text-blue-400 border border-blue-500/10'
-                            }`}>
-                              {getVal(emp, ['status', 'Status ( Weekly Status / Current Stage)', 'Status', 'Priority ( High / Medium / Low)'])}
-                            </span>
-                          </td>
-                          <td className="py-1.5 px-2">
-                            {getVal(emp, ['contact_number', 'No. of Openings', 'Contact number', 'Phone'])}
-                          </td>
-                          <td className="py-1.5 px-2">
-                            {getVal(emp, ['email', 'Email ID', 'Email'])}
-                          </td>
-                          <td className="py-1.5 px-2">
-                            {getVal(emp, ['total_experience', 'No. of Hires', 'Total Experience'])}
-                          </td>
-                          <td className="py-1.5 px-2">
-                            {getVal(emp, ['relevant_experience', 'Relevant Experience'])}
-                          </td>
-                          <td className="py-1.5 px-2">
-                            {getVal(emp, ['current_ctc', 'Current CTC'])}
-                          </td>
-                          <td className="py-1.5 px-2">
-                            {getVal(emp, ['expected_ctc', 'Expected CTC'])}
-                          </td>
-                          <td className="py-1.5 px-2">
-                            {getVal(emp, ['notice_period', 'Target Date & JD (Job Description in note )', 'Notice Period'])}
-                          </td>
-                          <td className="py-1.5 px-2">
-                            {getVal(emp, ['location', 'Location'])}
-                          </td>
-                          <td className="py-1.5 px-2 max-w-[200px] truncate" title={getVal(emp, ['job_change_reason', 'Requested By', 'Job Change Reason'])}>
-                            {getVal(emp, ['job_change_reason', 'Requested By', 'Job Change Reason'])}
-                          </td>
-                          <td className="py-1.5 px-2 max-w-[200px] truncate" title={getVal(emp, ['recruiters_remarks', 'Remarks (Notes / Updates)', "Recruiter's Remarks", 'Remarks'])}>
-                            {getVal(emp, ['recruiters_remarks', 'Remarks (Notes / Updates)', "Recruiter's Remarks", 'Remarks'])}
-                          </td>
-                          <td className="py-1.5 px-2">
-                            {getVal(emp, ['current_company', 'Current Company Name'])}
-                          </td>
-                          <td className="py-1.5 px-2">
-                            {getVal(emp, ['interview_mode_1st', 'Interview Mode (1st Round)'])}
-                          </td>
-                          <td className="py-1.5 px-2">
-                            {getVal(emp, ['interview_date_1st', '1st Round Interview Date', 'Open Date'])}
-                          </td>
-                          <td className="py-1.5 px-2">
-                            {getVal(emp, ['interviewer_1st', 'Interviewer (1st Round)'])}
-                          </td>
-                          <td className="py-1.5 px-2">
-                            {getVal(emp, ['status_1st', 'Status (1st Round)'])}
-                          </td>
-                          <td className="py-1.5 px-2">
-                            {getVal(emp, ['interview_date_2nd', 'Interview (2nd / Final Round) Date', 'Close Date'])}
-                          </td>
-                          <td className="py-1.5 px-2">
-                            {getVal(emp, ['interview_mode_2nd', 'Interview Mode (2nd Round)'])}
-                          </td>
-                          <td className="py-1.5 px-2">
-                            {getVal(emp, ['interviewer_2nd', 'Interviewer (2nd / Final Round)'])}
-                          </td>
-                          <td className="py-1.5 px-2">
-                            {getVal(emp, ['status_2nd', 'Status (2nd / Final Round)'])}
-                          </td>
-                          <td className="py-1.5 px-2">
-                            {getVal(emp, ['offered_joining_date', 'Joining Date', 'Close Date'])}
-                          </td>
-                          <td className="py-1.5 px-2">
-                            {getVal(emp, ['ctc_offered', 'CTC Offered'])}
-                          </td>
-                          <td className="py-1.5 px-2">
-                            {getVal(emp, ['vendor_name', 'Vendor Name'])}
-                          </td>
+                        <tr key={index} className={`transition-colors hover:bg-blue-50 ${isDark ? 'text-slate-300' : 'text-slate-800'}`}>
+                          {dynamicHeaders.map((header, hIdx) => {
+                            const val = emp[header]
+                            const strVal = val !== undefined && val !== null ? String(val).trim() : ''
+                            return (
+                              <td
+                                key={hIdx}
+                                className={`py-2 px-3 whitespace-nowrap ${
+                                  hIdx === 0 ? 'sticky left-0 z-20 border-r border-b border-slate-200 bg-slate-50 font-bold text-slate-900' : ''
+                                }`}
+                              >
+                                {strVal ? (
+                                  header.toLowerCase().includes('status') ? (
+                                    <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-blue-500/10 text-blue-500 border border-blue-500/20">
+                                      {strVal}
+                                    </span>
+                                  ) : (
+                                    strVal
+                                  )
+                                ) : (
+                                  '-'
+                                )}
+                              </td>
+                            )
+                          })}
                         </tr>
                       ))}
                     </tbody>
-                  )
-                })()}
-              </table>
+                  </table>
+                )
+              })()}
             </div>
 
             {/* PAGINATION PANEL */}
