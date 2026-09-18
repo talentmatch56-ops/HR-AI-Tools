@@ -10,10 +10,6 @@
     {
       "src": "/api/(.*)",
       "dest": "https://hr-ai-copilot-backend.onrender.com/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "frontend/$1"
     }
   ]
 }
