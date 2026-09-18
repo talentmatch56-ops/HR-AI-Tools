@@ -466,7 +466,8 @@ export default function DashboardPage() {
 
   const handleRegisterSheet = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newSheetId.trim()) return
+    const targetSheetId = newSheetId.trim()
+    if (!targetSheetId) return
     setRegisteringSheet(true)
     setRegisterSheetStatus('Verifying and registering sheet ID...')
     try {
@@ -474,13 +475,16 @@ export default function DashboardPage() {
       const res = await fetch(`${apiUrl}/sheets/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sheet_id: newSheetId, token })
+        body: JSON.stringify({ sheet_id: targetSheetId, token })
       })
       const data = await res.json()
       if (res.ok) {
-        setRegisterSheetStatus('Google Sheet registered successfully!')
+        setRegisterSheetStatus('Google Sheet registered & activated! Syncing data...')
         setNewSheetId('')
+        setActiveSheetId(targetSheetId)
+        localStorage.setItem('active_sheet_id', targetSheetId)
         fetchRegisteredSheets(token)
+        fetchEmployees(token, searchQuery, targetSheetId)
       } else {
         setRegisterSheetStatus(`Error: ${data.detail || 'Failed to register'}`)
       }
