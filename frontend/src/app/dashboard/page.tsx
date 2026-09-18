@@ -332,8 +332,6 @@ export default function DashboardPage() {
   // Logs state
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([])
 
-  }, [dateFilter, selectedCustomDate, activeSheetId, activeTabName, searchQuery])
-
   useEffect(() => {
     // Load Plus Jakarta Sans Font dynamically
     const link = document.createElement('link')
