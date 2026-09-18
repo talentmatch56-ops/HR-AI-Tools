@@ -236,11 +236,15 @@ async def list_employees(token: str, query: Optional[str] = None, sheet_id: Opti
         else:
             res = sheets.read_sheet("Master Recruitment Tracker 2026", sheet_id=sheet_id)
 
+        if not res:
+            res = sheets.employees
+
         # Refresh cache with latest data
         redis_cache.set(cache_key, res, expire_seconds=10)
         return res
     except Exception as e:
-        return []
+        from server import sheets
+        return sheets.employees
 
 class PolicyUploadRequest(BaseModel):
     title: str

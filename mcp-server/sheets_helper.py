@@ -165,111 +165,156 @@ class GoogleSheetsHelper:
                 self.projects = MOCK_PROJECTS
                 self.settings = MOCK_SETTINGS
 
+    def _process_rows(self, rows: List[List[Any]]) -> List[Dict[str, Any]]:
+        if not rows:
+            return []
+        headers = [str(h).strip() for h in rows[0]]
+        data = []
+        for row in rows[1:]:
+            row_dict = {}
+            for idx, val in enumerate(row):
+                if idx < len(headers):
+                    row_dict[headers[idx]] = str(val).strip() if val is not None else ""
+            if row_dict and any(v for v in row_dict.values()):
+                data.append(row_dict)
+
+        if not data:
+            return []
+
+        # Check if custom layout headers exist or map generic rows
+        if any(h in headers for h in ["Candidate Name", "Email ID", "Job Title", "Name", "Candidate"]):
+            mapped_data = []
+            for entry in data:
+                raw_name = entry.get("Candidate Name", entry.get("Name", "")).strip()
+                raw_email_id = entry.get("Email ID", entry.get("Email", "")).strip()
+                
+                if not raw_name and not raw_email_id:
+                    continue
+                if (raw_name.lower() in ["name", "candidate name", "offered", "joined"]) or (raw_email_id.lower() in ["email id", "email"]):
+                    continue
+                
+                email = "no-email@company.com"
+                for val in entry.values():
+                    if isinstance(val, str) and "@" in val:
+                        email = val.strip()
+                        break
+                if "@" in raw_email_id:
+                    email = raw_email_id
+                    
+                if raw_name:
+                    name = raw_name
+                elif "@" in raw_email_id:
+                    prefix = raw_email_id.split("@")[0]
+                    name = "".join([c for c in prefix if c.isalpha()]).title()
+                else:
+                    name = raw_email_id
+                    
+                mapped_entry = {
+                    "employee_id": entry.get("No.", entry.get("Date", "EMP")),
+                    "name": name,
+                    "email": email,
+                    "designation": entry.get("Job Title", entry.get("Role", entry.get("Designation", "Developer"))),
+                    "department": entry.get("Opening For ( Inhouse / Client)", entry.get("Department", "Engineering")),
+                    "joining_date": entry.get("Date", entry.get("Joining Date", "")),
+                    "pending_documents": [],
+                    "birthday": "01-01",
+                    "status": entry.get("Status", "Active"),
+                    "month": entry.get("Month", ""),
+                    "accountable": entry.get("Accountable", ""),
+                    "recruiter_name": entry.get("Recruiter Name", ""),
+                    "tech_non_tech": entry.get("Tech/Non Tech", ""),
+                    "source": entry.get("Source ✅", entry.get("Source", "")),
+                    "contact_number": entry.get("Contact number", entry.get("Phone", "")),
+                    "total_experience": entry.get("Total Experience", ""),
+                    "relevant_experience": entry.get("Relevant Experience", ""),
+                    "current_ctc": entry.get("Current CTC", ""),
+                    "expected_ctc": entry.get("Expected CTC", ""),
+                    "notice_period": entry.get("Notice Period", ""),
+                    "location": entry.get("Location", ""),
+                    "job_change_reason": entry.get("Job Change Reason", ""),
+                    "recruiters_remarks": entry.get("Recruiter's Remarks", ""),
+                    "current_company": entry.get("Current Company Name", ""),
+                    "interview_mode_1st": entry.get("Interview Mode (1st Round)", ""),
+                    "interview_date_1st": entry.get("1st Round Interview Date(( 01-Jan-2026))", entry.get("1st Round Interview Date", "")),
+                    "interviewer_1st": entry.get("Interviewer (1st Round)", ""),
+                    "status_1st": entry.get("Status (1st Round)", ""),
+                    "interview_date_2nd": entry.get("Interview (2nd / Final Round) Date", ""),
+                    "interview_mode_2nd": entry.get("Interview Mode (2nd Round)", ""),
+                    "interviewer_2nd": entry.get("Interviewer (2nd / Final Round)", ""),
+                    "status_2nd": entry.get("Status (2nd / Final Round)", ""),
+                    "offered_joining_date": entry.get("Joining Date", ""),
+                    "ctc_offered": entry.get("CTC Offered", ""),
+                    "vendor_name": entry.get("Vendor Name", "")
+                }
+                mapped_data.append(mapped_entry)
+            return mapped_data if mapped_data else data
+
+        return data
+
     def read_sheet(self, sheet_name: str, sheet_id: Optional[str] = None) -> List[Dict[str, Any]]:
         active_sheet_id = sheet_id or self.sheet_id
-        if self.is_mock and (active_sheet_id == "mock-sheet-id" or not hasattr(self, 'service')):
-            attr_name = sheet_name.lower()
-            if hasattr(self, attr_name):
-                val = getattr(self, attr_name)
-                if isinstance(val, dict):
-                    return [val]
-                return val
-            return []
         
-        try:
-            result = self.service.spreadsheets().values().get(
-                spreadsheetId=active_sheet_id, range=f"{sheet_name}!A:Z"
-            ).execute()
-            rows = result.get('values', [])
-            if not rows:
-                return []
-            headers = [h.strip() for h in rows[0]]
-            data = []
-            for row in rows[1:]:
-                row_dict = {}
-                for idx, val in enumerate(row):
-                    if idx < len(headers):
-                        row_dict[headers[idx]] = val.strip() if isinstance(val, str) else val
-                # Filter out completely empty or uninitialized rows
-                if row_dict and any(v.strip() if isinstance(v, str) else v for v in row_dict.values()):
-                    data.append(row_dict)
+        # 1. Try Google Sheets API if service is available
+        if not self.is_mock and hasattr(self, 'service'):
+            try:
+                rows = []
+                # Try specific sheet name first
+                try:
+                    res = self.service.spreadsheets().values().get(
+                        spreadsheetId=active_sheet_id, range=f"'{sheet_name}'!A:ZZ"
+                    ).execute()
+                    rows = res.get('values', [])
+                except Exception:
+                    rows = []
 
-            # Check if this is the custom layout
-            if "Candidate Name" in headers or "Email ID" in headers:
-                mapped_data = []
-                for entry in data:
-                    raw_name = entry.get("Candidate Name", "").strip()
-                    raw_email_id = entry.get("Email ID", "").strip()
-                    
-                    if not raw_name and not raw_email_id:
-                        continue
-                    if (raw_name.lower() in ["name", "candidate name", "offered", "joined"]) or (raw_email_id.lower() in ["email id"]):
-                        continue
-                    
-                    # Self-healing email detector
-                    email = "no-email@company.com"
-                    for val in entry.values():
-                        if isinstance(val, str) and "@" in val:
-                            email = val.strip()
-                            break
-                    if "@" in raw_email_id:
-                        email = raw_email_id
-                        
-                    # Determine candidate name
-                    if raw_name:
-                        name = raw_name
-                    elif "@" in raw_email_id:
-                        prefix = raw_email_id.split("@")[0]
-                        name = "".join([c for c in prefix if c.isalpha()]).title()
-                    else:
-                        name = raw_email_id
-                        
-                    mapped_entry = {
-                        "employee_id": entry.get("No.", entry.get("Date", "EMP")),
-                        "name": name,
-                        "email": email,
-                        "designation": entry.get("Job Title", "Developer"),
-                        "department": entry.get("Opening For ( Inhouse / Client)", "Engineering"),
-                        "joining_date": entry.get("Date", ""),
-                        "pending_documents": [],
-                        "birthday": "01-01",
-                        "status": entry.get("Status", "Active"),
-                        
-                        # Store all of the remaining custom columns
-                        "month": entry.get("Month", ""),
-                        "accountable": entry.get("Accountable", ""),
-                        "recruiter_name": entry.get("Recruiter Name", ""),
-                        "tech_non_tech": entry.get("Tech/Non Tech", ""),
-                        "source": entry.get("Source ✅", ""),
-                        "contact_number": entry.get("Contact number", ""),
-                        "total_experience": entry.get("Total Experience", ""),
-                        "relevant_experience": entry.get("Relevant Experience", ""),
-                        "current_ctc": entry.get("Current CTC", ""),
-                        "expected_ctc": entry.get("Expected CTC", ""),
-                        "notice_period": entry.get("Notice Period", ""),
-                        "location": entry.get("Location", ""),
-                        "job_change_reason": entry.get("Job Change Reason", ""),
-                        "recruiters_remarks": entry.get("Recruiter's Remarks", ""),
-                        "current_company": entry.get("Current Company Name", ""),
-                        "interview_mode_1st": entry.get("Interview Mode (1st Round)", ""),
-                        "interview_date_1st": entry.get("1st Round Interview Date(( 01-Jan-2026))", ""),
-                        "interviewer_1st": entry.get("Interviewer (1st Round)", ""),
-                        "status_1st": entry.get("Status (1st Round)", ""),
-                        "interview_date_2nd": entry.get("Interview (2nd / Final Round) Date", ""),
-                        "interview_mode_2nd": entry.get("Interview Mode (2nd Round)", ""),
-                        "interviewer_2nd": entry.get("Interviewer (2nd / Final Round)", ""),
-                        "status_2nd": entry.get("Status (2nd / Final Round)", ""),
-                        "offered_joining_date": entry.get("Joining Date", ""),
-                        "ctc_offered": entry.get("CTC Offered", ""),
-                        "vendor_name": entry.get("Vendor Name", "")
-                    }
-                    mapped_data.append(mapped_entry)
-                return mapped_data
+                # If specific tab failed, get metadata for 1st tab title
+                if not rows:
+                    try:
+                        meta = self.service.spreadsheets().get(spreadsheetId=active_sheet_id).execute()
+                        sheets_meta = meta.get('sheets', [])
+                        if sheets_meta:
+                            first_tab = sheets_meta[0]['properties']['title']
+                            res = self.service.spreadsheets().values().get(
+                                spreadsheetId=active_sheet_id, range=f"'{first_tab}'!A:ZZ"
+                            ).execute()
+                            rows = res.get('values', [])
+                    except Exception as e:
+                        logger.warning(f"Metadata fetch failed for {active_sheet_id}: {e}")
 
-            return data
-        except Exception as e:
-            logger.error(f"Error reading sheet {sheet_name} from spreadsheet {active_sheet_id}: {e}")
-            return []
+                if rows:
+                    processed = self._process_rows(rows)
+                    if processed:
+                        return processed
+            except Exception as e:
+                logger.error(f"Google Sheets API read failed for {active_sheet_id}: {e}")
+
+        # 2. Public CSV fetch fallback for public Google Sheets (without needing Service Account)
+        if active_sheet_id and active_sheet_id != "mock-sheet-id":
+            try:
+                import urllib.request
+                import csv
+                import io
+                csv_url = f"https://docs.google.com/spreadsheets/d/{active_sheet_id}/gviz/tq?tqx=out:csv"
+                req = urllib.request.Request(csv_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+                with urllib.request.urlopen(req, timeout=5) as response:
+                    content = response.read().decode('utf-8')
+                    csv_file = io.StringIO(content)
+                    reader = csv.reader(csv_file)
+                    rows = list(reader)
+                    if rows and len(rows) > 1:
+                        processed = self._process_rows(rows)
+                        if processed:
+                            return processed
+            except Exception as e:
+                logger.warning(f"Public CSV fetch failed for {active_sheet_id}: {e}")
+
+        # 3. Fallback to mock dataset if mock mode or reading failed
+        attr_name = sheet_name.lower()
+        if hasattr(self, attr_name):
+            val = getattr(self, attr_name)
+            return [val] if isinstance(val, dict) else val
+            
+        return self.employees
 
     def update_sheet(self, sheet_name: str, row: int, column: str, value: Any, sheet_id: Optional[str] = None) -> bool:
         active_sheet_id = sheet_id or self.sheet_id
