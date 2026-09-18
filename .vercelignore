@@ -1,0 +1,17 @@
+# Ignore Python backend — deployed separately on Render
+backend/
+mcp-server/
+venv/
+.venv/
+__pycache__/
+*.py
+*.pyc
+
+# Ignore other non-frontend files
+requirements.txt
+Dockerfile
+docker-compose.yml
+render.yaml
+start.bat
+main.py
+test_sheet.py
