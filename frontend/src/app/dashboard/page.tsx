@@ -1777,57 +1777,135 @@ export default function DashboardPage() {
                     <th className="py-2 px-2 bg-slate-700 whitespace-nowrap">Vendor Name</th>
                   </tr>
                 </thead>
-                <tbody className={`divide-y ${isDark ? 'divide-blue-955/50' : 'divide-slate-200'}`}>
-                  {paginatedEmployees.map((emp, index) => (
-                    <tr key={index} className={`transition-colors hover:bg-blue-50 ${
-                      isDark ? 'text-slate-300' : 'text-slate-800'
-                    }`}>
-                      <td className="py-1.5 px-2 font-semibold sticky left-0 z-20 border-r border-b border-slate-200 bg-slate-50 text-slate-800 whitespace-nowrap">{emp.employee_id || '-'}</td>
-                      <td className="py-1.5 px-2 whitespace-nowrap">{emp.joining_date || '-'}</td>
-                      <td className="py-1.5 px-2">{(emp as any).month || '-'}</td>
-                      <td className="py-1.5 px-2">{(emp as any).accountable || '-'}</td>
-                      <td className="py-1.5 px-2">{(emp as any).recruiter_name || '-'}</td>
-                      <td className={`py-1.5 px-2 font-bold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{emp.designation || '-'}</td>
-                      <td className="py-1.5 px-2">{(emp as any).tech_non_tech || '-'}</td>
-                      <td className="py-1.5 px-2">{emp.department || '-'}</td>
-                      <td className={`py-1.5 px-2 font-extrabold ${isDark ? 'text-blue-400' : 'text-blue-650'}`}>{emp.name || '-'}</td>
-                      <td className="py-1.5 px-2">{(emp as any).source || '-'}</td>
-                      <td className="py-1.5 px-2">
-                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
-                          ['Screen Selected', 'Offerd'].includes(emp.status) 
-                            ? 'bg-blue-500/10 text-blue-450 border border-blue-500/10'
-                            : ['Screen Rejected', 'Not Interested'].includes(emp.status)
-                            ? 'bg-red-500/10 text-red-400 border border-red-500/10'
-                            : 'bg-blue-500/10 text-blue-400 border border-blue-500/10'
+                {(() => {
+                  const getVal = (emp: any, keys: string[]) => {
+                    if (!emp) return '-'
+                    for (const k of keys) {
+                      if (emp[k] !== undefined && emp[k] !== null && String(emp[k]).trim() !== '') {
+                        return String(emp[k]).trim()
+                      }
+                    }
+                    return '-'
+                  }
+
+                  return (
+                    <tbody className={`divide-y ${isDark ? 'divide-blue-955/50' : 'divide-slate-200'}`}>
+                      {paginatedEmployees.map((emp, index) => (
+                        <tr key={index} className={`transition-colors hover:bg-blue-50 ${
+                          isDark ? 'text-slate-300' : 'text-slate-800'
                         }`}>
-                          {emp.status || '-'}
-                        </span>
-                      </td>
-                      <td className="py-1.5 px-2">{(emp as any).contact_number || '-'}</td>
-                      <td className="py-1.5 px-2">{emp.email || '-'}</td>
-                      <td className="py-1.5 px-2">{(emp as any).total_experience || '-'}</td>
-                      <td className="py-1.5 px-2">{(emp as any).relevant_experience || '-'}</td>
-                      <td className="py-1.5 px-2">{(emp as any).current_ctc || '-'}</td>
-                      <td className="py-1.5 px-2">{(emp as any).expected_ctc || '-'}</td>
-                      <td className="py-1.5 px-2">{(emp as any).notice_period || '-'}</td>
-                      <td className="py-1.5 px-2">{(emp as any).location || '-'}</td>
-                      <td className="py-1.5 px-2 max-w-[200px] truncate" title={(emp as any).job_change_reason}>{(emp as any).job_change_reason || '-'}</td>
-                      <td className="py-1.5 px-2 max-w-[200px] truncate" title={(emp as any).recruiters_remarks}>{(emp as any).recruiters_remarks || '-'}</td>
-                      <td className="py-1.5 px-2">{(emp as any).current_company || '-'}</td>
-                      <td className="py-1.5 px-2">{(emp as any).interview_mode_1st || '-'}</td>
-                      <td className="py-1.5 px-2">{(emp as any).interview_date_1st || '-'}</td>
-                      <td className="py-1.5 px-2">{(emp as any).interviewer_1st || '-'}</td>
-                      <td className="py-1.5 px-2">{(emp as any).status_1st || '-'}</td>
-                      <td className="py-1.5 px-2">{(emp as any).interview_date_2nd || '-'}</td>
-                      <td className="py-1.5 px-2">{(emp as any).interview_mode_2nd || '-'}</td>
-                      <td className="py-1.5 px-2">{(emp as any).interviewer_2nd || '-'}</td>
-                      <td className="py-1.5 px-2">{(emp as any).status_2nd || '-'}</td>
-                      <td className="py-1.5 px-2">{(emp as any).offered_joining_date || '-'}</td>
-                      <td className="py-1.5 px-2">{(emp as any).ctc_offered || '-'}</td>
-                      <td className="py-1.5 px-2">{(emp as any).vendor_name || ''}</td>
-                    </tr>
-                  ))}
-                </tbody>
+                          <td className="py-1.5 px-2 font-semibold sticky left-0 z-20 border-r border-b border-slate-200 bg-slate-50 text-slate-800 whitespace-nowrap">
+                            {getVal(emp, ['employee_id', 'S. No.', 'No.', 'Date', 'id'])}
+                          </td>
+                          <td className="py-1.5 px-2 whitespace-nowrap">
+                            {getVal(emp, ['joining_date', 'Open Date', 'Date', 'Close Date'])}
+                          </td>
+                          <td className="py-1.5 px-2">
+                            {getVal(emp, ['month', 'Month'])}
+                          </td>
+                          <td className="py-1.5 px-2">
+                            {getVal(emp, ['accountable', 'Acountable HR', 'Accountable'])}
+                          </td>
+                          <td className="py-1.5 px-2">
+                            {getVal(emp, ['recruiter_name', 'Recruiter Name'])}
+                          </td>
+                          <td className={`py-1.5 px-2 font-bold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                            {getVal(emp, ['designation', 'Opening Name', 'Technology', 'Job Title', 'Role', 'Specialized'])}
+                          </td>
+                          <td className="py-1.5 px-2">
+                            {getVal(emp, ['tech_non_tech', 'Tech/Non Tech', 'Specialized'])}
+                          </td>
+                          <td className="py-1.5 px-2">
+                            {getVal(emp, ['department', 'Opening For ( Inhouse / Client)', 'Opening For', 'Hiring Type', 'Department', 'Requested By'])}
+                          </td>
+                          <td className={`py-1.5 px-2 font-extrabold ${isDark ? 'text-blue-400' : 'text-blue-650'}`}>
+                            {getVal(emp, ['name', 'Opening Name', 'Candidate Name', 'Name', 'Opening', 'Recruiter Name'])}
+                          </td>
+                          <td className="py-1.5 px-2">
+                            {getVal(emp, ['source', 'Hiring Type', 'Source ✅', 'Source'])}
+                          </td>
+                          <td className="py-1.5 px-2">
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
+                              ['Screen Selected', 'Offerd', 'Close'].includes(getVal(emp, ['status', 'Status ( Weekly Status / Current Stage)', 'Status', 'Priority ( High / Medium / Low)'])) 
+                                ? 'bg-blue-500/10 text-blue-450 border border-blue-500/10'
+                                : ['Screen Rejected', 'Not Interested'].includes(getVal(emp, ['status', 'Status ( Weekly Status / Current Stage)', 'Status']))
+                                ? 'bg-red-500/10 text-red-400 border border-red-500/10'
+                                : 'bg-blue-500/10 text-blue-400 border border-blue-500/10'
+                            }`}>
+                              {getVal(emp, ['status', 'Status ( Weekly Status / Current Stage)', 'Status', 'Priority ( High / Medium / Low)'])}
+                            </span>
+                          </td>
+                          <td className="py-1.5 px-2">
+                            {getVal(emp, ['contact_number', 'No. of Openings', 'Contact number', 'Phone'])}
+                          </td>
+                          <td className="py-1.5 px-2">
+                            {getVal(emp, ['email', 'Email ID', 'Email'])}
+                          </td>
+                          <td className="py-1.5 px-2">
+                            {getVal(emp, ['total_experience', 'No. of Hires', 'Total Experience'])}
+                          </td>
+                          <td className="py-1.5 px-2">
+                            {getVal(emp, ['relevant_experience', 'Relevant Experience'])}
+                          </td>
+                          <td className="py-1.5 px-2">
+                            {getVal(emp, ['current_ctc', 'Current CTC'])}
+                          </td>
+                          <td className="py-1.5 px-2">
+                            {getVal(emp, ['expected_ctc', 'Expected CTC'])}
+                          </td>
+                          <td className="py-1.5 px-2">
+                            {getVal(emp, ['notice_period', 'Target Date & JD (Job Description in note )', 'Notice Period'])}
+                          </td>
+                          <td className="py-1.5 px-2">
+                            {getVal(emp, ['location', 'Location'])}
+                          </td>
+                          <td className="py-1.5 px-2 max-w-[200px] truncate" title={getVal(emp, ['job_change_reason', 'Requested By', 'Job Change Reason'])}>
+                            {getVal(emp, ['job_change_reason', 'Requested By', 'Job Change Reason'])}
+                          </td>
+                          <td className="py-1.5 px-2 max-w-[200px] truncate" title={getVal(emp, ['recruiters_remarks', 'Remarks (Notes / Updates)', "Recruiter's Remarks", 'Remarks'])}>
+                            {getVal(emp, ['recruiters_remarks', 'Remarks (Notes / Updates)', "Recruiter's Remarks", 'Remarks'])}
+                          </td>
+                          <td className="py-1.5 px-2">
+                            {getVal(emp, ['current_company', 'Current Company Name'])}
+                          </td>
+                          <td className="py-1.5 px-2">
+                            {getVal(emp, ['interview_mode_1st', 'Interview Mode (1st Round)'])}
+                          </td>
+                          <td className="py-1.5 px-2">
+                            {getVal(emp, ['interview_date_1st', '1st Round Interview Date', 'Open Date'])}
+                          </td>
+                          <td className="py-1.5 px-2">
+                            {getVal(emp, ['interviewer_1st', 'Interviewer (1st Round)'])}
+                          </td>
+                          <td className="py-1.5 px-2">
+                            {getVal(emp, ['status_1st', 'Status (1st Round)'])}
+                          </td>
+                          <td className="py-1.5 px-2">
+                            {getVal(emp, ['interview_date_2nd', 'Interview (2nd / Final Round) Date', 'Close Date'])}
+                          </td>
+                          <td className="py-1.5 px-2">
+                            {getVal(emp, ['interview_mode_2nd', 'Interview Mode (2nd Round)'])}
+                          </td>
+                          <td className="py-1.5 px-2">
+                            {getVal(emp, ['interviewer_2nd', 'Interviewer (2nd / Final Round)'])}
+                          </td>
+                          <td className="py-1.5 px-2">
+                            {getVal(emp, ['status_2nd', 'Status (2nd / Final Round)'])}
+                          </td>
+                          <td className="py-1.5 px-2">
+                            {getVal(emp, ['offered_joining_date', 'Joining Date', 'Close Date'])}
+                          </td>
+                          <td className="py-1.5 px-2">
+                            {getVal(emp, ['ctc_offered', 'CTC Offered'])}
+                          </td>
+                          <td className="py-1.5 px-2">
+                            {getVal(emp, ['vendor_name', 'Vendor Name'])}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  )
+                })()}
               </table>
             </div>
 
