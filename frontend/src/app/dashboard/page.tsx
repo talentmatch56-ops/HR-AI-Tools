@@ -258,6 +258,8 @@ const cleanString = (str: string | null | undefined): string => {
 }
 
 export default function DashboardPage() {
+  const router = useRouter()
+  const chatEndRef = useRef<HTMLDivElement>(null)
   const [user, setUser] = useState<{ email: string; role: string } | null>(null)
   const [token, setToken] = useState<string>('')
   const [input, setInput] = useState('')
@@ -292,6 +294,8 @@ export default function DashboardPage() {
   // Custom Google Sheets State
   const [registeredSheets, setRegisteredSheets] = useState<Array<{ id: number; sheet_id: string; title: string }>>([])
   const [activeSheetId, setActiveSheetId] = useState<string>('')
+  const [availableTabs, setAvailableTabs] = useState<string[]>([])
+  const [activeTabName, setActiveTabName] = useState<string>('Master Recruitment Tracker 2026')
   const [newSheetId, setNewSheetId] = useState('')
   const [registeringSheet, setRegisteringSheet] = useState(false)
   const [registerSheetStatus, setRegisterSheetStatus] = useState('')
@@ -331,6 +335,84 @@ export default function DashboardPage() {
 
   // Logs state
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([])
+
+  const getCookieValue = (name: string): string => {
+    if (typeof document === 'undefined') return ''
+    const value = `; ${document.cookie}`
+    const parts = value.split(`; ${name}=`)
+    if (parts.length === 2) {
+      try {
+        return decodeURIComponent(parts.pop()?.split(';').shift() || '')
+      } catch (e) {
+        return ''
+      }
+    }
+    return ''
+  }
+
+  const fetchEmployees = async (jwtToken: string, query = '', sheetId = '', tabName = '') => {
+    try {
+      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '')
+      let url = `${apiUrl}/employees?token=${jwtToken}`
+      if (query) url += `&query=${encodeURIComponent(query)}`
+      if (sheetId) url += `&sheet_id=${encodeURIComponent(sheetId)}`
+      const currentTab = tabName || activeTabName
+      if (currentTab) url += `&tab=${encodeURIComponent(currentTab)}`
+
+      const res = await fetch(url)
+      if (res.ok) {
+        const data = await res.json()
+        setEmployees(data)
+      }
+    } catch (err) {
+      console.error('Error fetching employees:', err)
+    }
+  }
+
+  const fetchSheetTabs = async (jwtToken: string, sheetId: string) => {
+    if (!sheetId) return
+    try {
+      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '')
+      const res = await fetch(`${apiUrl}/sheets/tabs?token=${jwtToken}&sheet_id=${encodeURIComponent(sheetId)}`)
+      if (res.ok) {
+        const tabs = await res.json()
+        setAvailableTabs(tabs || [])
+        if (tabs && tabs.length > 0) {
+          const defaultTab = tabs.find((t: string) => t.toLowerCase().includes('master') || t.toLowerCase().includes('recruitment')) || tabs[0]
+          setActiveTabName(defaultTab)
+          fetchEmployees(jwtToken, searchQuery, sheetId, defaultTab)
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching sheet tabs:', err)
+    }
+  }
+
+  const fetchRegisteredSheets = async (jwtToken: string) => {
+    try {
+      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '')
+      const res = await fetch(`${apiUrl}/sheets?token=${jwtToken}`)
+      if (res.ok) {
+        const data = await res.json()
+        setRegisteredSheets(data)
+      }
+    } catch (err) {
+      console.error('Error fetching registered sheets:', err)
+    }
+  }
+
+  const fetchAuditLogs = async (jwtToken: string) => {
+    try {
+      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '')
+      const res = await fetch(`${apiUrl}/audit/logs?token=${jwtToken}`)
+      if (res.ok) {
+        const data = await res.json()
+        setAuditLogs(data.reverse())
+      }
+    } catch (err) {
+      console.error('Error fetching logs:', err)
+    }
+  }
 
   useEffect(() => {
     // Load Plus Jakarta Sans Font dynamically
@@ -397,25 +479,6 @@ export default function DashboardPage() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const fetchEmployees = async (jwtToken: string, query = '', sheetId = '', tabName = '') => {
-    try {
-      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '')
-      let url = `${apiUrl}/employees?token=${jwtToken}`
-      if (query) url += `&query=${encodeURIComponent(query)}`
-      if (sheetId) url += `&sheet_id=${encodeURIComponent(sheetId)}`
-      const currentTab = tabName || activeTabName
-      if (currentTab) url += `&tab=${encodeURIComponent(currentTab)}`
-
-      const res = await fetch(url)
-      if (res.ok) {
-        const data = await res.json()
-        setEmployees(data)
-      }
-    } catch (err) {
-      console.error('Error fetching employees:', err)
-    }
-  }
-
   const handleSync = async () => {
     if (syncing) return
     setSyncing(true)
@@ -438,19 +501,6 @@ export default function DashboardPage() {
     setSyncing(false)
   }
 
-  const fetchRegisteredSheets = async (jwtToken: string) => {
-    try {
-      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '')
-      const res = await fetch(`${apiUrl}/sheets?token=${jwtToken}`)
-      if (res.ok) {
-        const data = await res.json()
-        setRegisteredSheets(data)
-      }
-    } catch (err) {
-      console.error('Error fetching registered sheets:', err)
-    }
-  }
-
   const handleRegisterSheet = async (e: React.FormEvent) => {
     e.preventDefault()
     const targetSheetId = newSheetId.trim()
@@ -466,12 +516,12 @@ export default function DashboardPage() {
       })
       const data = await res.json()
       if (res.ok) {
-        setRegisterSheetStatus('Google Sheet registered & activated! Syncing data...')
+        setRegisterSheetStatus('Google Sheet registered & activated! Syncing sub-sheets...')
         setNewSheetId('')
         setActiveSheetId(targetSheetId)
         localStorage.setItem('active_sheet_id', targetSheetId)
         fetchRegisteredSheets(token)
-        fetchEmployees(token, searchQuery, targetSheetId)
+        fetchSheetTabs(token, targetSheetId)
       } else {
         setRegisterSheetStatus(`Error: ${data.detail || 'Failed to register'}`)
       }
@@ -479,19 +529,6 @@ export default function DashboardPage() {
       setRegisterSheetStatus('Network error connecting to backend.')
     } finally {
       setRegisteringSheet(false)
-    }
-  }
-
-  const fetchAuditLogs = async (jwtToken: string) => {
-    try {
-      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '')
-      const res = await fetch(`${apiUrl}/audit/logs?token=${jwtToken}`)
-      if (res.ok) {
-        const data = await res.json()
-        setAuditLogs(data.reverse()) // Show newest logs first
-      }
-    } catch (err) {
-      console.error('Error fetching logs:', err)
     }
   }
 
