@@ -215,13 +215,21 @@ def get_audit_logs(token: str):
     return agent_service.get_audit_logs()
 
 @app.get("/employees")
-async def list_employees(token: str, query: Optional[str] = None, sheet_id: Optional[str] = None, force_refresh: Optional[bool] = False):
+async def list_employees(
+    token: str, 
+    query: Optional[str] = None, 
+    sheet_id: Optional[str] = None, 
+    tab: Optional[str] = None, 
+    sheet_name: Optional[str] = None, 
+    force_refresh: Optional[bool] = False
+):
     """Expose search/list of employees directly from sheets database."""
     user = get_current_user(token)
+    target_tab = tab or sheet_name or "Master Recruitment Tracker 2026"
     from services.redis_cache import redis_cache
-    cache_key = f"employees_all_{sheet_id or 'default'}"
+    cache_key = f"employees_all_{sheet_id or 'default'}_{target_tab}"
     if query:
-        cache_key = f"employees_search_{query.strip().lower()}_{sheet_id or 'default'}"
+        cache_key = f"employees_search_{query.strip().lower()}_{sheet_id or 'default'}_{target_tab}"
 
     # Skip cache entirely when force_refresh=true (Real-time Sync button)
     if not force_refresh:
@@ -234,7 +242,7 @@ async def list_employees(token: str, query: Optional[str] = None, sheet_id: Opti
         if query:
             res = sheets.search_employee(name=query, sheet_id=sheet_id)
         else:
-            res = sheets.read_sheet("Master Recruitment Tracker 2026", sheet_id=sheet_id)
+            res = sheets.read_sheet(target_tab, sheet_id=sheet_id)
 
         if not res:
             res = sheets.employees
@@ -245,6 +253,13 @@ async def list_employees(token: str, query: Optional[str] = None, sheet_id: Opti
     except Exception as e:
         from server import sheets
         return sheets.employees
+
+@app.get("/sheets/tabs")
+def list_sheet_tabs(token: str, sheet_id: Optional[str] = None):
+    """Get list of sub-sheet tabs available in the specified Google Sheet."""
+    user = get_current_user(token)
+    from server import sheets
+    return sheets.get_sheet_tabs(sheet_id=sheet_id)
 
 class PolicyUploadRequest(BaseModel):
     title: str

@@ -332,22 +332,7 @@ export default function DashboardPage() {
   // Logs state
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([])
 
-  const router = useRouter()
-  const chatEndRef = useRef<HTMLDivElement>(null)
-
-  const getCookieValue = (name: string): string => {
-    if (typeof document === 'undefined') return ''
-    const value = `; ${document.cookie}`
-    const parts = value.split(`; ${name}=`)
-    if (parts.length === 2) {
-      try {
-        return decodeURIComponent(parts.pop()?.split(';').shift() || '')
-      } catch (e) {
-        return ''
-      }
-    }
-    return ''
-  }
+  }, [dateFilter, selectedCustomDate, activeSheetId, activeTabName, searchQuery])
 
   useEffect(() => {
     // Load Plus Jakarta Sans Font dynamically
@@ -365,8 +350,6 @@ export default function DashboardPage() {
 
     if (!storedToken) {
       storedToken = getCookieValue('hr_token')
-    }
-    if (!storedUser) {
       storedUser = getCookieValue('hr_user')
     }
 
@@ -392,7 +375,11 @@ export default function DashboardPage() {
     } catch (e) {}
     setActiveSheetId(cachedSheetId)
 
-    fetchEmployees(storedToken, '', cachedSheetId)
+    if (cachedSheetId) {
+      fetchSheetTabs(storedToken, cachedSheetId)
+    } else {
+      fetchEmployees(storedToken, '', cachedSheetId)
+    }
     fetchAuditLogs(storedToken)
     fetchRegisteredSheets(storedToken)
 
@@ -412,12 +399,14 @@ export default function DashboardPage() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const fetchEmployees = async (jwtToken: string, query = '', sheetId = '') => {
+  const fetchEmployees = async (jwtToken: string, query = '', sheetId = '', tabName = '') => {
     try {
       const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '')
       let url = `${apiUrl}/employees?token=${jwtToken}`
       if (query) url += `&query=${encodeURIComponent(query)}`
       if (sheetId) url += `&sheet_id=${encodeURIComponent(sheetId)}`
+      const currentTab = tabName || activeTabName
+      if (currentTab) url += `&tab=${encodeURIComponent(currentTab)}`
 
       const res = await fetch(url)
       if (res.ok) {
@@ -1072,6 +1061,28 @@ export default function DashboardPage() {
                 <option key={idx} value={s.sheet_id}>{s.title}</option>
               ))}
             </select>
+            {availableTabs.length > 0 && (
+              <div className="mt-2.5">
+                <label className={`block text-[9px] uppercase font-bold mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Sub-Sheet Tab</label>
+                <select
+                  value={activeTabName}
+                  onChange={(e) => {
+                    const tabVal = e.target.value
+                    setActiveTabName(tabVal)
+                    fetchEmployees(token, searchQuery, activeSheetId, tabVal)
+                  }}
+                  className={`w-full text-xs font-semibold py-1.5 px-2 rounded-lg border focus:outline-none focus:ring-1 ${
+                    isDark 
+                      ? 'bg-blue-955/40 border-blue-900 text-white focus:border-blue-505' 
+                      : 'bg-white border-slate-200 text-slate-800 focus:border-blue-400 shadow-sm'
+                  }`}
+                >
+                  {availableTabs.map((t, idx) => (
+                    <option key={idx} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           {/* ACTIVE USER DETAILS */}
@@ -1680,6 +1691,26 @@ export default function DashboardPage() {
 
               {/* RIGHT: Controls */}
               <div className="flex items-center gap-2 flex-wrap">
+                {/* Sub-Sheet Selector */}
+                {availableTabs.length > 0 && (
+                  <div className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 px-2 py-1 rounded-lg">
+                    <label className="text-[10px] font-bold text-blue-800">Sub-Sheet:</label>
+                    <select
+                      value={activeTabName}
+                      onChange={(e) => {
+                        const tabVal = e.target.value
+                        setActiveTabName(tabVal)
+                        fetchEmployees(token, searchQuery, activeSheetId, tabVal)
+                      }}
+                      className="text-[10px] font-bold py-0.5 px-2 rounded border bg-white border-blue-300 text-blue-900 focus:outline-none focus:border-blue-500 shadow-sm"
+                    >
+                      {availableTabs.map((t, idx) => (
+                        <option key={idx} value={t}>{t}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
                 {/* Date filter */}
                 <div className="flex items-center gap-1.5">
                   <label className="text-[10px] font-bold text-slate-500">Filter Date:</label>

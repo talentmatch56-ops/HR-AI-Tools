@@ -326,19 +326,35 @@ class GoogleSheetsHelper:
         if active_sheet_id and active_sheet_id != "mock-sheet-id":
             try:
                 import urllib.request
+                import urllib.parse
                 import csv
                 import io
-                csv_url = f"https://docs.google.com/spreadsheets/d/{active_sheet_id}/gviz/tq?tqx=out:csv"
+                quoted_tab = urllib.parse.quote(sheet_name)
+                csv_url = f"https://docs.google.com/spreadsheets/d/{active_sheet_id}/gviz/tq?tqx=out:csv&sheet={quoted_tab}"
                 req = urllib.request.Request(csv_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
-                with urllib.request.urlopen(req, timeout=5) as response:
-                    content = response.read().decode('utf-8')
-                    csv_file = io.StringIO(content)
-                    reader = csv.reader(csv_file)
-                    rows = list(reader)
-                    if rows and len(rows) > 1:
-                        processed = self._process_rows(rows)
-                        if processed:
-                            return processed
+                try:
+                    with urllib.request.urlopen(req, timeout=8) as response:
+                        content = response.read().decode('utf-8')
+                        csv_file = io.StringIO(content)
+                        reader = csv.reader(csv_file)
+                        rows = list(reader)
+                        if rows and len(rows) > 1:
+                            processed = self._process_rows(rows)
+                            if processed:
+                                return processed
+                except Exception:
+                    # Fallback to default tab if specific tab fails
+                    fallback_url = f"https://docs.google.com/spreadsheets/d/{active_sheet_id}/gviz/tq?tqx=out:csv"
+                    req_fb = urllib.request.Request(fallback_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+                    with urllib.request.urlopen(req_fb, timeout=5) as response:
+                        content = response.read().decode('utf-8')
+                        csv_file = io.StringIO(content)
+                        reader = csv.reader(csv_file)
+                        rows = list(reader)
+                        if rows and len(rows) > 1:
+                            processed = self._process_rows(rows)
+                            if processed:
+                                return processed
             except Exception as e:
                 logger.warning(f"Public CSV fetch failed for {active_sheet_id}: {e}")
 
@@ -349,6 +365,44 @@ class GoogleSheetsHelper:
             return [val] if isinstance(val, dict) else val
             
         return self.employees
+
+    def get_sheet_tabs(self, sheet_id: Optional[str] = None) -> List[str]:
+        active_sheet_id = sheet_id or self.sheet_id
+        if not active_sheet_id or active_sheet_id == "mock-sheet-id":
+            return ["Master Recruitment Tracker 2026", "Shortlisting Tracker 2026", "Job Opening Tracker 2026"]
+            
+        # Try Google Sheets API first if available
+        if hasattr(self, 'service') and not self.is_mock:
+            try:
+                meta = self.service.spreadsheets().get(spreadsheetId=active_sheet_id).execute()
+                sheets_meta = meta.get('sheets', [])
+                tabs = [s['properties']['title'] for s in sheets_meta if 'properties' in s and 'title' in s['properties']]
+                if tabs:
+                    return tabs
+            except Exception as e:
+                logger.warning(f"Sheets API tab list failed: {e}")
+
+        # Fallback to HTML view scraping for public Google Sheets
+        try:
+            import urllib.request
+            import re
+            url = f"https://docs.google.com/spreadsheets/d/{active_sheet_id}/htmlview"
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+            with urllib.request.urlopen(req, timeout=5) as response:
+                html = response.read().decode('utf-8')
+                sheet_names = re.findall(r'name[:=]\s*"([^"]+)"', html)
+                cleaned = []
+                ignored = ['google', 'viewport', 'referrer', 'reports']
+                for s in sheet_names:
+                    s_clean = s.strip()
+                    if s_clean and s_clean.lower() not in ignored and s_clean not in cleaned:
+                        cleaned.append(s_clean)
+                if cleaned:
+                    return cleaned
+        except Exception as e:
+            logger.warning(f"HTML view tab extraction failed: {e}")
+
+        return ["Master Recruitment Tracker 2026", "Shortlisting Tracker 2026", "Job Opening Tracker 2026"]
 
     def update_sheet(self, sheet_name: str, row: int, column: str, value: Any, sheet_id: Optional[str] = None) -> bool:
         active_sheet_id = sheet_id or self.sheet_id
