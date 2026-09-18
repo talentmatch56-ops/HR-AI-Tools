@@ -166,7 +166,7 @@ class GoogleSheetsHelper:
                 self.settings = MOCK_SETTINGS
 
     def _process_rows(self, rows: List[List[Any]]) -> List[Dict[str, Any]]:
-        if not rows:
+        if not rows or len(rows) < 2:
             return []
         headers = [str(h).strip() for h in rows[0]]
         data = []
@@ -174,82 +174,116 @@ class GoogleSheetsHelper:
             row_dict = {}
             for idx, val in enumerate(row):
                 if idx < len(headers):
-                    row_dict[headers[idx]] = str(val).strip() if val is not None else ""
+                    val_str = str(val).strip() if val is not None else ""
+                    row_dict[headers[idx]] = val_str
             if row_dict and any(v for v in row_dict.values()):
                 data.append(row_dict)
 
         if not data:
             return []
 
-        # Check if custom layout headers exist or map generic rows
-        if any(h in headers for h in ["Candidate Name", "Email ID", "Job Title", "Name", "Candidate"]):
-            mapped_data = []
-            for entry in data:
-                raw_name = entry.get("Candidate Name", entry.get("Name", "")).strip()
-                raw_email_id = entry.get("Email ID", entry.get("Email", "")).strip()
-                
-                if not raw_name and not raw_email_id:
-                    continue
-                if (raw_name.lower() in ["name", "candidate name", "offered", "joined"]) or (raw_email_id.lower() in ["email id", "email"]):
-                    continue
-                
-                email = "no-email@company.com"
-                for val in entry.values():
-                    if isinstance(val, str) and "@" in val:
-                        email = val.strip()
-                        break
-                if "@" in raw_email_id:
-                    email = raw_email_id
-                    
-                if raw_name:
-                    name = raw_name
-                elif "@" in raw_email_id:
-                    prefix = raw_email_id.split("@")[0]
-                    name = "".join([c for c in prefix if c.isalpha()]).title()
-                else:
-                    name = raw_email_id
-                    
-                mapped_entry = {
-                    "employee_id": entry.get("No.", entry.get("Date", "EMP")),
-                    "name": name,
-                    "email": email,
-                    "designation": entry.get("Job Title", entry.get("Role", entry.get("Designation", "Developer"))),
-                    "department": entry.get("Opening For ( Inhouse / Client)", entry.get("Department", "Engineering")),
-                    "joining_date": entry.get("Date", entry.get("Joining Date", "")),
-                    "pending_documents": [],
-                    "birthday": "01-01",
-                    "status": entry.get("Status", "Active"),
-                    "month": entry.get("Month", ""),
-                    "accountable": entry.get("Accountable", ""),
-                    "recruiter_name": entry.get("Recruiter Name", ""),
-                    "tech_non_tech": entry.get("Tech/Non Tech", ""),
-                    "source": entry.get("Source ✅", entry.get("Source", "")),
-                    "contact_number": entry.get("Contact number", entry.get("Phone", "")),
-                    "total_experience": entry.get("Total Experience", ""),
-                    "relevant_experience": entry.get("Relevant Experience", ""),
-                    "current_ctc": entry.get("Current CTC", ""),
-                    "expected_ctc": entry.get("Expected CTC", ""),
-                    "notice_period": entry.get("Notice Period", ""),
-                    "location": entry.get("Location", ""),
-                    "job_change_reason": entry.get("Job Change Reason", ""),
-                    "recruiters_remarks": entry.get("Recruiter's Remarks", ""),
-                    "current_company": entry.get("Current Company Name", ""),
-                    "interview_mode_1st": entry.get("Interview Mode (1st Round)", ""),
-                    "interview_date_1st": entry.get("1st Round Interview Date(( 01-Jan-2026))", entry.get("1st Round Interview Date", "")),
-                    "interviewer_1st": entry.get("Interviewer (1st Round)", ""),
-                    "status_1st": entry.get("Status (1st Round)", ""),
-                    "interview_date_2nd": entry.get("Interview (2nd / Final Round) Date", ""),
-                    "interview_mode_2nd": entry.get("Interview Mode (2nd Round)", ""),
-                    "interviewer_2nd": entry.get("Interviewer (2nd / Final Round)", ""),
-                    "status_2nd": entry.get("Status (2nd / Final Round)", ""),
-                    "offered_joining_date": entry.get("Joining Date", ""),
-                    "ctc_offered": entry.get("CTC Offered", ""),
-                    "vendor_name": entry.get("Vendor Name", "")
-                }
-                mapped_data.append(mapped_entry)
-            return mapped_data if mapped_data else data
+        mapped_data = []
+        for idx, entry in enumerate(data):
+            # 1. Determine Name
+            raw_name = (
+                entry.get("Opening Name") or 
+                entry.get("Candidate Name") or 
+                entry.get("Name") or 
+                entry.get("Opening") or 
+                entry.get("Job Title") or 
+                entry.get("Recruiter Name") or 
+                f"Record #{idx + 1}"
+            ).strip()
 
-        return data
+            # Skip header rows if accidentally parsed as data
+            if raw_name.lower() in ["name", "candidate name", "opening name", "offered", "joined", "s. no."]:
+                continue
+
+            # 2. Determine Email
+            raw_email_id = entry.get("Email ID", entry.get("Email", "")).strip()
+            email = "no-email@company.com"
+            for val in entry.values():
+                if isinstance(val, str) and "@" in val:
+                    email = val.strip()
+                    break
+            if "@" in raw_email_id:
+                email = raw_email_id
+
+            # 3. Determine Designation / Role
+            designation = (
+                entry.get("Opening Name") or 
+                entry.get("Job Title") or 
+                entry.get("Role") or 
+                entry.get("Designation") or 
+                entry.get("Specialized") or 
+                "Recruitment Opening"
+            ).strip()
+
+            # 4. Determine Department
+            department = (
+                entry.get("Opening For ( Inhouse / Client)") or 
+                entry.get("Department") or 
+                entry.get("Requested By") or 
+                entry.get("Acountable HR") or 
+                "Engineering"
+            ).strip()
+
+            # 5. Determine Status
+            status_val = (
+                entry.get("Status ( Weekly Status / Current Stage)") or 
+                entry.get("Status") or 
+                entry.get("Priority ( High / Medium / Low)") or 
+                "Active"
+            ).strip()
+
+            # 6. Determine ID & Date
+            emp_id = str(entry.get("S. No.", entry.get("No.", entry.get("Date", f"EMP{idx + 1:03d}")))).strip()
+            joining_date = str(entry.get("Open Date", entry.get("Close Date", entry.get("Date", entry.get("Joining Date", ""))))).strip()
+
+            # Build mapped entry preserving ALL custom column keys
+            mapped_entry = {
+                # Standard fields for frontend table
+                "employee_id": emp_id if emp_id else f"EMP{idx + 1:03d}",
+                "name": raw_name,
+                "email": email,
+                "designation": designation,
+                "department": department,
+                "joining_date": joining_date,
+                "pending_documents": [],
+                "birthday": "01-01",
+                "status": status_val if status_val else "Active",
+                "month": entry.get("Month", ""),
+                "accountable": entry.get("Acountable HR", entry.get("Accountable", "")),
+                "recruiter_name": entry.get("Recruiter Name", ""),
+                "tech_non_tech": entry.get("Specialized", entry.get("Tech/Non Tech", "")),
+                "source": entry.get("Hiring Type", entry.get("Source ✅", entry.get("Source", ""))),
+                "contact_number": entry.get("No. of Openings", entry.get("Contact number", "")),
+                "total_experience": entry.get("No. of Hires", entry.get("Total Experience", "")),
+                "relevant_experience": entry.get("Relevant Experience", ""),
+                "current_ctc": entry.get("Current CTC", ""),
+                "expected_ctc": entry.get("Expected CTC", ""),
+                "notice_period": entry.get("Target Date & JD (Job Description in note )", entry.get("Notice Period", "")),
+                "location": entry.get("Location", ""),
+                "job_change_reason": entry.get("Requested By", entry.get("Job Change Reason", "")),
+                "recruiters_remarks": entry.get("Remarks (Notes / Updates)", entry.get("Recruiter's Remarks", "")),
+                "current_company": entry.get("Current Company Name", ""),
+                "interview_mode_1st": entry.get("Interview Mode (1st Round)", ""),
+                "interview_date_1st": entry.get("1st Round Interview Date", ""),
+                "interviewer_1st": entry.get("Interviewer (1st Round)", ""),
+                "status_1st": entry.get("Status (1st Round)", ""),
+                "interview_date_2nd": entry.get("Close Date", entry.get("Interview (2nd / Final Round) Date", "")),
+                "interview_mode_2nd": entry.get("Interview Mode (2nd Round)", ""),
+                "interviewer_2nd": entry.get("Interviewer (2nd / Final Round)", ""),
+                "status_2nd": entry.get("Status (2nd / Final Round)", ""),
+                "offered_joining_date": entry.get("Close Date", entry.get("Joining Date", "")),
+                "ctc_offered": entry.get("CTC Offered", ""),
+                "vendor_name": entry.get("Vendor Name", ""),
+                # Include all raw dict items
+                **entry
+            }
+            mapped_data.append(mapped_entry)
+
+        return mapped_data
 
     def read_sheet(self, sheet_name: str, sheet_id: Optional[str] = None) -> List[Dict[str, Any]]:
         active_sheet_id = sheet_id or self.sheet_id
