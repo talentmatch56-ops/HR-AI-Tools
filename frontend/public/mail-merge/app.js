@@ -31,15 +31,15 @@ let currentUploadContext = null; // 'excel' or 'template'
 async function initApp() {
     await loadData();
     checkLoginSession();
-    setupNavigation();
-    setupModals();
-    setupPartitionModal();
-    setupEmployeeModal();
-    updateDashboard();
-    renderEmployees();
-    renderTemplates();
-    renderMergeView();
-    renderHistory();
+    if (typeof setupNavigation === 'function') setupNavigation();
+    if (typeof setupModals === 'function') setupModals();
+    if (typeof setupPartitionModal === 'function') setupPartitionModal();
+    if (typeof setupEmployeeModal === 'function') setupEmployeeModal();
+    if (typeof updateDashboard === 'function') updateDashboard();
+    if (typeof renderEmployees === 'function') renderEmployees();
+    if (typeof renderTemplates === 'function') renderTemplates();
+    if (typeof renderMergeView === 'function') renderMergeView();
+    if (typeof renderHistory === 'function') renderHistory();
 }
 
 window.handleLogin = function(e) {
