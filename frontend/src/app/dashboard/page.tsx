@@ -1348,8 +1348,8 @@ export default function DashboardPage() {
             )}
 
             {/* SUB-SHEET TAB SELECTOR IN TOP HEADER BAR (ALWAYS VISIBLE) */}
-            <div className="flex items-center gap-1.5 ml-auto sm:ml-4 bg-blue-50/90 border border-blue-200/80 px-2.5 py-1 rounded-xl shadow-xs">
-              <span className="text-[10px] font-bold text-blue-800 uppercase tracking-wider shrink-0 hidden md:inline">
+            <div className="flex items-center gap-1.5 ml-auto sm:ml-4 bg-blue-50/90 border border-blue-200/80 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-xl shadow-xs max-w-[150px] sm:max-w-xs">
+              <span className="text-[10px] font-bold text-blue-800 uppercase tracking-wider shrink-0 hidden sm:inline">
                 Sub-Sheet:
               </span>
               <select
@@ -1359,7 +1359,7 @@ export default function DashboardPage() {
                   setActiveTabName(tabVal)
                   fetchEmployees(token, searchQuery, activeSheetId, tabVal)
                 }}
-                className="bg-white border border-blue-300 text-blue-900 text-xs font-bold py-1 px-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs cursor-pointer"
+                className="bg-white border border-blue-300 text-blue-900 text-xs font-bold py-1 px-1.5 sm:px-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs cursor-pointer truncate max-w-[130px] sm:max-w-xs"
               >
                 {(availableTabs.length > 0 ? availableTabs : ['Master Recruitment Tracker 2026', 'Shortlisting Tracker 2026', 'Job Opening Tracker 2026']).map((t, idx) => (
                   <option key={idx} value={t}>{t}</option>
@@ -1382,7 +1382,7 @@ export default function DashboardPage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-5">
               {bentoMenuItems.map((item, idx) => (
                 <button
                   key={item.id}
@@ -1582,7 +1582,7 @@ export default function DashboardPage() {
 
 
             {/* INPUT BAR */}
-            <form onSubmit={handleSendMessage} className={`p-4 border-t ${
+            <form onSubmit={handleSendMessage} className={`p-4 pb-20 md:pb-4 border-t ${
               isDark ? 'border-blue-900/30 bg-[#070a1a]' : 'border-slate-200 bg-white'
             }`}>
               <div className="relative max-w-4xl mx-auto flex gap-2">
