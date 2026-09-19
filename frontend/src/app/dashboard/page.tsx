@@ -304,7 +304,11 @@ export default function DashboardPage() {
   // Custom Google Sheets State
   const [registeredSheets, setRegisteredSheets] = useState<Array<{ id: number; sheet_id: string; title: string }>>([])
   const [activeSheetId, setActiveSheetId] = useState<string>('')
-  const [availableTabs, setAvailableTabs] = useState<string[]>([])
+  const [availableTabs, setAvailableTabs] = useState<string[]>([
+    'Master Recruitment Tracker 2026',
+    'Shortlisting Tracker 2026',
+    'Job Opening Tracker 2026'
+  ])
   const [activeTabName, setActiveTabName] = useState<string>('Master Recruitment Tracker 2026')
   const [newSheetId, setNewSheetId] = useState('')
   const [registeringSheet, setRegisteringSheet] = useState(false)
@@ -465,11 +469,9 @@ export default function DashboardPage() {
     } catch (e) {}
     setActiveSheetId(cachedSheetId)
 
-    if (cachedSheetId) {
-      fetchSheetTabs(storedToken, cachedSheetId)
-    } else {
-      fetchEmployees(storedToken, '', cachedSheetId)
-    }
+    const targetSheet = cachedSheetId || '1Eb-hdgR2K9Es3y-INU8YmE5yFGg0I56psxaLYLuILCQ'
+    fetchEmployees(storedToken, '', targetSheet)
+    fetchSheetTabs(storedToken, targetSheet)
     fetchAuditLogs(storedToken)
     fetchRegisteredSheets(storedToken)
 
@@ -1107,7 +1109,6 @@ export default function DashboardPage() {
                 <option key={idx} value={s.sheet_id}>{s.title}</option>
               ))}
             </select>
-            {availableTabs.length > 0 && (
               <div className="mt-2.5">
                 <label className={`block text-[9px] uppercase font-bold mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Sub-Sheet Tab</label>
                 <select
@@ -1123,12 +1124,11 @@ export default function DashboardPage() {
                       : 'bg-white border-slate-200 text-slate-800 focus:border-blue-400 shadow-sm'
                   }`}
                 >
-                  {availableTabs.map((t, idx) => (
+                  {(availableTabs.length > 0 ? availableTabs : ['Master Recruitment Tracker 2026', 'Shortlisting Tracker 2026', 'Job Opening Tracker 2026']).map((t, idx) => (
                     <option key={idx} value={t}>{t}</option>
                   ))}
                 </select>
               </div>
-            )}
           </div>
 
           {/* ACTIVE USER DETAILS */}
@@ -1346,6 +1346,26 @@ export default function DashboardPage() {
                 ← Back
               </button>
             )}
+
+            {/* SUB-SHEET TAB SELECTOR IN TOP HEADER BAR (ALWAYS VISIBLE) */}
+            <div className="flex items-center gap-1.5 ml-auto sm:ml-4 bg-blue-50/90 border border-blue-200/80 px-2.5 py-1 rounded-xl shadow-xs">
+              <span className="text-[10px] font-bold text-blue-800 uppercase tracking-wider shrink-0 hidden md:inline">
+                Sub-Sheet:
+              </span>
+              <select
+                value={activeTabName}
+                onChange={(e) => {
+                  const tabVal = e.target.value
+                  setActiveTabName(tabVal)
+                  fetchEmployees(token, searchQuery, activeSheetId, tabVal)
+                }}
+                className="bg-white border border-blue-300 text-blue-900 text-xs font-bold py-1 px-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs cursor-pointer"
+              >
+                {(availableTabs.length > 0 ? availableTabs : ['Master Recruitment Tracker 2026', 'Shortlisting Tracker 2026', 'Job Opening Tracker 2026']).map((t, idx) => (
+                  <option key={idx} value={t}>{t}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
