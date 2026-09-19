@@ -1354,6 +1354,15 @@ export default function DashboardPage() {
             </div>
           )}
 
+          {/* AI RESUME PARSER BUTTON (LEFT MENU) */}
+          <button
+            onClick={() => { setShowResumeModal(true); if (isMobile) setSidebarOpen(false); }}
+            className="w-full mb-5 py-2.5 px-3 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-md shadow-blue-600/20 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer border border-blue-400/30"
+          >
+            <FileText className="w-4 h-4" />
+            <span>Upload Resume (AI)</span>
+          </button>
+
           {/* NAVIGATION LINKS GRID (BOX VIEW) */}
           <nav className="grid grid-cols-2 gap-2 mb-6 font-sans">
             <button
@@ -1569,16 +1578,6 @@ export default function DashboardPage() {
                 ))}
               </select>
             </div>
-
-            {/* AI RESUME PARSER BUTTON */}
-            <button
-              onClick={() => setShowResumeModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold transition-all bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-sm shrink-0 cursor-pointer"
-              title="Upload & Extract Resume Details with AI"
-            >
-              <FileText className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Upload Resume</span>
-            </button>
 
             {/* TOP HEADER SIGN OUT BUTTON (ALWAYS ACCESSIBLE IN PWA & MOBILE) */}
             <button
