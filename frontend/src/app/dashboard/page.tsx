@@ -3042,14 +3042,14 @@ export default function DashboardPage() {
 
       </div>
 
-      {/* AI RESUME PARSER MODAL */}
+      {/* AI RESUME PARSER MODAL (WHITE THEME) */}
       {showResumeModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-slate-900 border border-blue-900/40 w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl p-6 space-y-4 font-sans text-slate-100 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-blue-900/40">
-              <div className="flex items-center gap-2 text-blue-400">
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-white border border-slate-200 w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl p-6 space-y-4 font-sans text-slate-800 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2 text-blue-600">
                 <FileText className="w-5 h-5" />
-                <h2 className="font-extrabold text-white text-base">AI Resume & CV Parser</h2>
+                <h2 className="font-extrabold text-slate-900 text-base">AI Resume & CV Parser</h2>
               </div>
               <button
                 onClick={() => {
@@ -3057,7 +3057,7 @@ export default function DashboardPage() {
                   setParsedCandidate(null)
                   setResumeText('')
                 }}
-                className="text-slate-400 hover:text-white text-sm font-bold"
+                className="text-slate-400 hover:text-slate-700 text-sm font-bold p-1 rounded-lg hover:bg-slate-100 transition-colors"
               >
                 ✕
               </button>
@@ -3065,7 +3065,7 @@ export default function DashboardPage() {
 
             <form onSubmit={handleParseResume} className="space-y-4">
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1.5">
                   Paste Candidate Resume / CV Content
                 </label>
                 <textarea
@@ -3074,16 +3074,16 @@ export default function DashboardPage() {
                   placeholder="Paste full text of candidate resume here (e.g. John Doe, Senior React & Python Developer, 5 years experience at Tech Corp, skills: React, Python, AWS, Docker...)"
                   value={resumeText}
                   onChange={(e) => setResumeText(e.target.value)}
-                  className="w-full bg-slate-950 border border-blue-900/50 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-blue-500 font-mono leading-relaxed"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white font-mono leading-relaxed placeholder-slate-400"
                 />
               </div>
 
               <div className="flex justify-between items-center">
-                <p className="text-[10px] text-slate-400">⚡ AI will automatically extract profile fields & match against requirements.</p>
+                <p className="text-[10px] text-slate-500 font-medium">⚡ AI will automatically extract profile fields & match against requirements.</p>
                 <button
                   type="submit"
                   disabled={parsingResume || !resumeText.trim()}
-                  className="px-5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-blue-600/20 disabled:opacity-50"
+                  className="px-5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-md shadow-blue-500/20 disabled:opacity-50"
                 >
                   {parsingResume ? (
                     <>
@@ -3098,38 +3098,38 @@ export default function DashboardPage() {
 
             {/* PARSED RESULTS CARD */}
             {parsedCandidate && (
-              <div className="mt-4 p-4 border border-blue-500/30 bg-blue-950/40 rounded-xl space-y-3 font-sans">
-                <div className="flex items-center justify-between border-b border-blue-900/40 pb-2">
-                  <h3 className="text-sm font-extrabold text-white">{parsedCandidate.name}</h3>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+              <div className="mt-4 p-4 border border-blue-200 bg-blue-50/60 rounded-xl space-y-3 font-sans">
+                <div className="flex items-center justify-between border-b border-blue-200/60 pb-2">
+                  <h3 className="text-sm font-extrabold text-slate-900">{parsedCandidate.name}</h3>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/10 text-emerald-700 border border-emerald-500/30">
                     🎯 {parsedCandidate.match_score || 92}% Match Rating
                   </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   <div>
-                    <span className="text-slate-400 font-semibold block text-[10px] uppercase">Email</span>
-                    <span className="text-white font-bold">{parsedCandidate.email || 'Not found'}</span>
+                    <span className="text-slate-500 font-semibold block text-[10px] uppercase">Email</span>
+                    <span className="text-slate-900 font-bold">{parsedCandidate.email || 'Not found'}</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 font-semibold block text-[10px] uppercase">Phone</span>
-                    <span className="text-white font-bold">{parsedCandidate.phone || 'Not found'}</span>
+                    <span className="text-slate-500 font-semibold block text-[10px] uppercase">Phone</span>
+                    <span className="text-slate-900 font-bold">{parsedCandidate.phone || 'Not found'}</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 font-semibold block text-[10px] uppercase">Designation / Role</span>
-                    <span className="text-white font-bold">{parsedCandidate.designation}</span>
+                    <span className="text-slate-500 font-semibold block text-[10px] uppercase">Designation / Role</span>
+                    <span className="text-slate-900 font-bold">{parsedCandidate.designation}</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 font-semibold block text-[10px] uppercase">Total Experience</span>
-                    <span className="text-white font-bold">{parsedCandidate.total_experience}</span>
+                    <span className="text-slate-500 font-semibold block text-[10px] uppercase">Total Experience</span>
+                    <span className="text-slate-900 font-bold">{parsedCandidate.total_experience}</span>
                   </div>
                 </div>
 
                 <div>
-                  <span className="text-slate-400 font-semibold block text-[10px] uppercase mb-1">Key Technical Skills</span>
+                  <span className="text-slate-500 font-semibold block text-[10px] uppercase mb-1">Key Technical Skills</span>
                   <div className="flex flex-wrap gap-1">
                     {(parsedCandidate.skills || []).map((sk: string, i: number) => (
-                      <span key={i} className="px-2 py-0.5 bg-blue-600/30 text-blue-300 border border-blue-500/30 rounded text-[9.5px] font-semibold">
+                      <span key={i} className="px-2 py-0.5 bg-white text-blue-700 border border-blue-200 rounded text-[9.5px] font-bold shadow-xs">
                         {sk}
                       </span>
                     ))}
@@ -3137,19 +3137,19 @@ export default function DashboardPage() {
                 </div>
 
                 <div>
-                  <span className="text-slate-400 font-semibold block text-[10px] uppercase mb-1">AI Executive Summary</span>
-                  <p className="text-xs text-slate-300 bg-slate-950 p-2.5 rounded-lg leading-relaxed">{parsedCandidate.summary}</p>
+                  <span className="text-slate-500 font-semibold block text-[10px] uppercase mb-1">AI Executive Summary</span>
+                  <p className="text-xs text-slate-800 bg-white border border-slate-200 p-2.5 rounded-lg leading-relaxed">{parsedCandidate.summary}</p>
                 </div>
 
                 {resumeSuccessMsg ? (
-                  <div className="p-3 bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-bold rounded-lg text-center animate-pulse">
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold rounded-lg text-center animate-pulse">
                     {resumeSuccessMsg}
                   </div>
                 ) : (
                   <button
                     onClick={handleAddParsedCandidateToSheet}
                     disabled={addingParsedCandidate}
-                    className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 disabled:opacity-50"
+                    className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 disabled:opacity-50"
                   >
                     {addingParsedCandidate ? (
                       <>
@@ -3166,14 +3166,14 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* 1-CLICK INTERVIEW SCHEDULER MODAL */}
+      {/* 1-CLICK INTERVIEW SCHEDULER MODAL (WHITE THEME) */}
       {showScheduleModal && schedulingCandidate && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <form onSubmit={handleScheduleInterviewSubmit} className="bg-slate-900 border border-blue-900/40 w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl p-6 space-y-4 font-sans text-slate-100">
-            <div className="flex items-center justify-between pb-3 border-b border-blue-900/40">
-              <div className="flex items-center gap-2 text-indigo-400">
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <form onSubmit={handleScheduleInterviewSubmit} className="bg-white border border-slate-200 w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl p-6 space-y-4 font-sans text-slate-800">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2 text-indigo-600">
                 <Clock className="w-5 h-5" />
-                <h2 className="font-extrabold text-white text-base">Schedule Candidate Interview</h2>
+                <h2 className="font-extrabold text-slate-900 text-base">Schedule Candidate Interview</h2>
               </div>
               <button
                 type="button"
@@ -3182,51 +3182,51 @@ export default function DashboardPage() {
                   setSchedulingCandidate(null)
                   setScheduleResult(null)
                 }}
-                className="text-slate-400 hover:text-white font-bold text-sm"
+                className="text-slate-400 hover:text-slate-700 font-bold text-sm p-1 rounded-lg hover:bg-slate-100 transition-colors"
               >
                 ✕
               </button>
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="p-3 bg-slate-950 border border-blue-900/30 rounded-xl flex justify-between items-center">
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex justify-between items-center">
                 <div>
-                  <span className="text-[10px] text-slate-400 uppercase font-bold block">Candidate</span>
-                  <span className="text-white font-extrabold text-sm">{schedulingCandidate.name}</span>
+                  <span className="text-[10px] text-slate-500 uppercase font-bold block">Candidate</span>
+                  <span className="text-slate-900 font-extrabold text-sm">{schedulingCandidate.name}</span>
                 </div>
-                <span className="text-blue-400 font-semibold text-xs">{schedulingCandidate.email}</span>
+                <span className="text-blue-600 font-bold text-xs">{schedulingCandidate.email}</span>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] uppercase font-bold text-slate-300 mb-1">Interview Date</label>
+                  <label className="block text-[10px] uppercase font-bold text-slate-700 mb-1">Interview Date</label>
                   <input
                     type="date"
                     required
                     value={interviewDate}
                     onChange={(e) => setInterviewDate(e.target.value)}
-                    className="w-full bg-slate-950 border border-blue-900/50 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-blue-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white font-medium"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] uppercase font-bold text-slate-300 mb-1">Time (IST)</label>
+                  <label className="block text-[10px] uppercase font-bold text-slate-700 mb-1">Time (IST)</label>
                   <input
                     type="time"
                     required
                     value={interviewTime}
                     onChange={(e) => setInterviewTime(e.target.value)}
-                    className="w-full bg-slate-950 border border-blue-900/50 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-blue-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white font-medium"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] uppercase font-bold text-slate-300 mb-1">Interview Round</label>
+                  <label className="block text-[10px] uppercase font-bold text-slate-700 mb-1">Interview Round</label>
                   <select
                     value={interviewRound}
                     onChange={(e) => setInterviewRound(e.target.value)}
-                    className="w-full bg-slate-950 border border-blue-900/50 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-blue-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white font-medium"
                   >
                     <option value="1st Round Technical">1st Round Technical</option>
                     <option value="2nd Round Technical">2nd Round Technical</option>
@@ -3235,11 +3235,11 @@ export default function DashboardPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[10px] uppercase font-bold text-slate-300 mb-1">Interview Mode</label>
+                  <label className="block text-[10px] uppercase font-bold text-slate-700 mb-1">Interview Mode</label>
                   <select
                     value={interviewMode}
                     onChange={(e) => setInterviewMode(e.target.value)}
-                    className="w-full bg-slate-950 border border-blue-900/50 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-blue-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white font-medium"
                   >
                     <option value="Google Meet">Google Meet</option>
                     <option value="Zoom Meeting">Zoom Meeting</option>
@@ -3250,22 +3250,22 @@ export default function DashboardPage() {
               </div>
 
               <div>
-                <label className="block text-[10px] uppercase font-bold text-slate-300 mb-1">Interviewer Email(s)</label>
+                <label className="block text-[10px] uppercase font-bold text-slate-700 mb-1">Interviewer Email(s)</label>
                 <input
                   type="text"
                   required
                   placeholder="tech-lead@company.com, hr@company.com"
                   value={interviewerEmails}
                   onChange={(e) => setInterviewerEmails(e.target.value)}
-                  className="w-full bg-slate-950 border border-blue-900/50 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-blue-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white font-medium"
                 />
               </div>
             </div>
 
             {scheduleResult && (
-              <div className="p-3 bg-emerald-500/20 border border-emerald-500/30 rounded-xl space-y-2 text-xs text-emerald-300">
-                <div className="font-bold flex items-center gap-1.5">
-                  <CheckCircle className="w-4 h-4 text-emerald-400" />
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl space-y-2 text-xs text-emerald-800">
+                <div className="font-bold flex items-center gap-1.5 text-emerald-700">
+                  <CheckCircle className="w-4 h-4 text-emerald-600" />
                   <span>Interview Scheduled & Invites Created!</span>
                 </div>
                 <div className="flex gap-2 pt-1">
@@ -3273,14 +3273,14 @@ export default function DashboardPage() {
                     href={scheduleResult.calendar_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-1.5 rounded-lg text-center font-bold text-[10px] shadow"
+                    className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-1.5 rounded-lg text-center font-bold text-[10px] shadow-xs"
                   >
                     📅 Open Google Calendar
                   </a>
                   <button
                     type="button"
                     onClick={() => downloadICSFile(scheduleResult)}
-                    className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded-lg text-center font-bold text-[10px] shadow"
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded-lg text-center font-bold text-[10px] shadow-xs"
                   >
                     📥 Download .ics Calendar File
                   </button>
@@ -3288,21 +3288,21 @@ export default function DashboardPage() {
               </div>
             )}
 
-            <div className="flex justify-end gap-3 pt-3 border-t border-blue-900/40">
+            <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => {
                   setShowScheduleModal(false)
                   setSchedulingCandidate(null)
                 }}
-                className="px-4 py-2 border border-blue-900/40 hover:bg-slate-800 rounded-xl text-xs font-semibold text-slate-300"
+                className="px-4 py-2 border border-slate-200 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-semibold text-slate-700"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={schedulingLoading}
-                className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-indigo-600/20 disabled:opacity-50"
+                className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-md shadow-indigo-600/20 disabled:opacity-50"
               >
                 {schedulingLoading ? (
                   <>
@@ -3317,14 +3317,14 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* INTERVIEWER FEEDBACK MODAL */}
+      {/* INTERVIEWER FEEDBACK MODAL (WHITE THEME) */}
       {showFeedbackModal && feedbackCandidate && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <form onSubmit={handleFeedbackSubmit} className="bg-slate-900 border border-blue-900/40 w-full max-w-md rounded-2xl overflow-hidden shadow-2xl p-6 space-y-4 font-sans text-slate-100">
-            <div className="flex items-center justify-between pb-3 border-b border-blue-900/40">
-              <div className="flex items-center gap-2 text-amber-400">
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <form onSubmit={handleFeedbackSubmit} className="bg-white border border-slate-200 w-full max-w-md rounded-2xl overflow-hidden shadow-2xl p-6 space-y-4 font-sans text-slate-800">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2 text-amber-600">
                 <CheckCircle className="w-5 h-5" />
-                <h2 className="font-extrabold text-white text-base">Interviewer Feedback Form</h2>
+                <h2 className="font-extrabold text-slate-900 text-base">Interviewer Feedback Form</h2>
               </div>
               <button
                 type="button"
@@ -3332,21 +3332,21 @@ export default function DashboardPage() {
                   setShowFeedbackModal(false)
                   setFeedbackCandidate(null)
                 }}
-                className="text-slate-400 hover:text-white font-bold text-sm"
+                className="text-slate-400 hover:text-slate-700 font-bold text-sm p-1 rounded-lg hover:bg-slate-100 transition-colors"
               >
                 ✕
               </button>
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="p-3 bg-slate-950 border border-blue-900/30 rounded-xl">
-                <span className="text-[10px] text-slate-400 uppercase font-bold block">Candidate Name</span>
-                <span className="text-white font-extrabold text-sm">{feedbackCandidate.name} ({feedbackCandidate.designation})</span>
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                <span className="text-[10px] text-slate-500 uppercase font-bold block">Candidate Name</span>
+                <span className="text-slate-900 font-extrabold text-sm">{feedbackCandidate.name} ({feedbackCandidate.designation})</span>
               </div>
 
               {/* 1-5 STAR RATING */}
               <div>
-                <label className="block text-[10px] uppercase font-bold text-slate-300 mb-1.5">Candidate Rating (1 to 5 Stars)</label>
+                <label className="block text-[10px] uppercase font-bold text-slate-700 mb-1.5">Candidate Rating (1 to 5 Stars)</label>
                 <div className="flex gap-2">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
@@ -3355,8 +3355,8 @@ export default function DashboardPage() {
                       onClick={() => setFeedbackRating(star)}
                       className={`flex-1 py-2 rounded-xl text-base transition-all font-bold ${
                         feedbackRating >= star
-                          ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 scale-105'
-                          : 'bg-slate-950 text-slate-600 border border-slate-800'
+                          ? 'bg-amber-400 text-slate-950 shadow-sm scale-105 border border-amber-500'
+                          : 'bg-slate-100 text-slate-400 border border-slate-200'
                       }`}
                     >
                       ★
@@ -3367,7 +3367,7 @@ export default function DashboardPage() {
 
               {/* RECOMMENDATION PILLS */}
               <div>
-                <label className="block text-[10px] uppercase font-bold text-slate-300 mb-1.5">Final Hiring Recommendation</label>
+                <label className="block text-[10px] uppercase font-bold text-slate-700 mb-1.5">Final Hiring Recommendation</label>
                 <div className="grid grid-cols-4 gap-1.5">
                   {(['Hire', 'Strong Hire', 'Hold', 'Reject'] as const).map((rec) => (
                     <button
@@ -3377,11 +3377,11 @@ export default function DashboardPage() {
                       className={`py-1.5 rounded-lg text-[10px] font-extrabold transition-all ${
                         feedbackRecommendation === rec
                           ? rec === 'Hire' || rec === 'Strong Hire'
-                            ? 'bg-emerald-600 text-white shadow'
+                            ? 'bg-emerald-600 text-white shadow-xs'
                             : rec === 'Hold'
-                            ? 'bg-amber-600 text-white shadow'
-                            : 'bg-rose-600 text-white shadow'
-                          : 'bg-slate-950 border border-slate-800 text-slate-400 hover:text-white'
+                            ? 'bg-amber-500 text-slate-950 shadow-xs'
+                            : 'bg-rose-600 text-white shadow-xs'
+                          : 'bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-200'
                       }`}
                     >
                       {rec}
@@ -3391,39 +3391,39 @@ export default function DashboardPage() {
               </div>
 
               <div>
-                <label className="block text-[10px] uppercase font-bold text-slate-300 mb-1">Interviewer Remarks & Assessment</label>
+                <label className="block text-[10px] uppercase font-bold text-slate-700 mb-1">Interviewer Remarks & Assessment</label>
                 <textarea
                   rows={4}
                   required
                   placeholder="e.g. Excellent problem solving in React & Python. Strong system design concept. High communication skills."
                   value={feedbackRemarks}
                   onChange={(e) => setFeedbackRemarks(e.target.value)}
-                  className="w-full bg-slate-950 border border-blue-900/50 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-blue-500 leading-relaxed"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white leading-relaxed"
                 />
               </div>
             </div>
 
             {feedbackSuccess && (
-              <div className="p-3 bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-bold rounded-lg text-center animate-pulse">
+              <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold rounded-lg text-center animate-pulse">
                 {feedbackSuccess}
               </div>
             )}
 
-            <div className="flex justify-end gap-3 pt-3 border-t border-blue-900/40">
+            <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => {
                   setShowFeedbackModal(false)
                   setFeedbackCandidate(null)
                 }}
-                className="px-4 py-2 border border-blue-900/40 hover:bg-slate-800 rounded-xl text-xs font-semibold text-slate-300"
+                className="px-4 py-2 border border-slate-200 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-semibold text-slate-700"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={submittingFeedback}
-                className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-extrabold flex items-center gap-2 shadow-lg shadow-amber-500/20 disabled:opacity-50"
+                className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-extrabold flex items-center gap-2 shadow-md shadow-amber-500/20 disabled:opacity-50"
               >
                 {submittingFeedback ? (
                   <>
@@ -3438,68 +3438,68 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* EMAIL APPROVAL MODAL */}
+      {/* EMAIL APPROVAL MODAL (WHITE THEME) */}
       {showApprovalModal && emailDraft && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-slate-900 border border-blue-900/40 w-full max-w-xl rounded-2xl overflow-hidden shadow-2xl p-6 space-y-4 font-sans animate-zoom-in">
-            <div className="flex items-center gap-2 text-blue-450 pb-2 border-b border-blue-955">
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white border border-slate-200 w-full max-w-xl rounded-2xl overflow-hidden shadow-2xl p-6 space-y-4 font-sans animate-zoom-in text-slate-800">
+            <div className="flex items-center gap-2 text-blue-600 pb-2 border-b border-slate-100">
               <Mail className="w-5 h-5" />
-              <h2 className="font-bold text-white">Review & Approve Outbound Email</h2>
+              <h2 className="font-extrabold text-slate-900">Review & Approve Outbound Email</h2>
             </div>
 
             <div className="space-y-3">
               <div>
-                <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">To</label>
+                <label className="block text-[10px] uppercase font-bold text-slate-700 mb-1">To</label>
                 <input
                   type="text"
                   value={emailDraft.to}
                   onChange={(e) => setEmailDraft({ ...emailDraft, to: e.target.value })}
-                  className="w-full bg-slate-950 border border-blue-900/45 rounded-lg p-2 text-xs text-white"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs text-slate-900"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">Subject</label>
+                <label className="block text-[10px] uppercase font-bold text-slate-700 mb-1">Subject</label>
                 <input
                   type="text"
                   value={emailDraft.subject}
                   onChange={(e) => setEmailDraft({ ...emailDraft, subject: e.target.value })}
-                  className="w-full bg-slate-955 border border-blue-900/45 rounded-lg p-2 text-xs text-white"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs text-slate-900"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] uppercase font-bold text-slate-455 mb-1">Body Preview (Rich Edit)</label>
+                <label className="block text-[10px] uppercase font-bold text-slate-700 mb-1">Body Preview (Rich Edit)</label>
                 <textarea
                   rows={8}
                   value={emailDraft.body}
                   onChange={(e) => setEmailDraft({ ...emailDraft, body: e.target.value })}
-                  className="w-full bg-slate-955 border border-blue-900/45 rounded-lg p-2.5 text-xs text-white leading-relaxed font-sans focus:border-blue-505"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs text-slate-900 leading-relaxed font-sans focus:border-blue-500 focus:bg-white"
                 />
               </div>
             </div>
 
             {emailSuccess && (
-              <div className="p-3 bg-blue-500/10 border border-blue-500/25 text-blue-455 text-xs rounded-lg text-center font-semibold animate-pulse">
+              <div className="p-3 bg-blue-50 border border-blue-200 text-blue-700 text-xs rounded-lg text-center font-semibold animate-pulse">
                 {emailSuccess}
               </div>
             )}
 
-            <div className="flex justify-end gap-3 pt-3 border-t border-blue-950">
+            <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
               <button
                 onClick={() => {
                   setShowApprovalModal(false)
                   setEmailDraft(null)
                 }}
                 disabled={sendingEmail}
-                className="px-4 py-2 border border-blue-900/30 hover:bg-slate-800 rounded-lg text-xs font-semibold text-slate-350 disabled:opacity-50"
+                className="px-4 py-2 border border-slate-200 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-semibold text-slate-700 disabled:opacity-50"
               >
                 Decline Draft
               </button>
               <button
                 onClick={handleApproveEmail}
                 disabled={sendingEmail}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 active:bg-blue-755 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-lg shadow-blue-600/15 disabled:opacity-50"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-md shadow-blue-600/15 disabled:opacity-50"
               >
                 {sendingEmail ? (
                   <>
@@ -3514,48 +3514,48 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* DIRECT CANDIDATE EMAIL PROMPT MODAL */}
+      {/* DIRECT CANDIDATE EMAIL PROMPT MODAL (WHITE THEME) */}
       {emailCandidate && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <form onSubmit={handleGenerateCandidateEmail} className="bg-slate-900 border border-blue-900/40 w-full max-w-md rounded-2xl overflow-hidden shadow-2xl p-6 space-y-4 font-sans text-slate-100">
-            <div className="flex items-center gap-2 text-blue-455 pb-2 border-b border-blue-955">
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <form onSubmit={handleGenerateCandidateEmail} className="bg-white border border-slate-200 w-full max-w-md rounded-2xl overflow-hidden shadow-2xl p-6 space-y-4 font-sans text-slate-800">
+            <div className="flex items-center gap-2 text-blue-600 pb-2 border-b border-slate-100">
               <Mail className="w-5 h-5" />
-              <h2 className="font-bold text-white">Write Email with AI</h2>
+              <h2 className="font-extrabold text-slate-900">Write Email with AI</h2>
             </div>
             
             <div className="space-y-3 text-xs">
               <div>
-                <span className="text-slate-400 font-semibold">Candidate:</span> <span className="text-white font-bold ml-1">{emailCandidate.name}</span>
+                <span className="text-slate-500 font-semibold">Candidate:</span> <span className="text-slate-900 font-bold ml-1">{emailCandidate.name}</span>
               </div>
               <div>
-                <span className="text-slate-400 font-semibold">Email:</span> <span className="text-white font-bold ml-1">{emailCandidate.email}</span>
+                <span className="text-slate-500 font-semibold">Email:</span> <span className="text-slate-900 font-bold ml-1">{emailCandidate.email}</span>
               </div>
               
               <div>
-                <label className="block text-[10px] uppercase font-bold text-slate-455 mb-1">Tell AI what to write in this email</label>
+                <label className="block text-[10px] uppercase font-bold text-slate-700 mb-1">Tell AI what to write in this email</label>
                 <textarea
                   rows={4}
                   required
                   placeholder="e.g. Invite them to the second round next Tuesday at 3 PM, emphasize our hybrid work model."
                   value={candidateEmailPrompt}
                   onChange={(e) => setCandidateEmailPrompt(e.target.value)}
-                  className="w-full bg-slate-950 border border-blue-900/40 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-blue-505"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white"
                 />
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-3 border-t border-blue-950">
+            <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => setEmailCandidate(null)}
-                className="px-4 py-2 border border-blue-900/30 hover:bg-slate-800 rounded-lg text-xs font-semibold text-slate-350"
+                className="px-4 py-2 border border-slate-200 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-semibold text-slate-700"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={generatingCandidateEmail || !candidateEmailPrompt.trim()}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 active:bg-blue-755 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-lg shadow-blue-600/15 disabled:opacity-50"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-md shadow-blue-600/15 disabled:opacity-50"
               >
                 {generatingCandidateEmail ? (
                   <>
