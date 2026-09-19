@@ -1943,26 +1943,26 @@ export default function DashboardPage() {
 
         {/* TAB 3: MASTER TRACKER TABLE VIEW */}
         {activeTab === 'table' && (
-          <div className="flex-1 p-4 flex flex-col min-h-0 font-sans gap-3">
+          <div className="flex-1 p-4 sm:p-6 flex flex-col min-h-0 font-sans gap-4">
 
             {/* TOOLBAR */}
-            <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center justify-between flex-wrap gap-3">
               {/* LEFT: Title & count */}
               <div className="flex items-center gap-3">
-                <h1 className="text-lg font-extrabold tracking-tight" style={{ background: 'linear-gradient(90deg,#3b82f6,#6366f1,#8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+                <h1 className="text-xl sm:text-2xl font-black tracking-tight" style={{ background: 'linear-gradient(90deg,#2563eb,#4f46e5,#7c3aed)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
                   Master <span style={{ fontFamily: "'Playfair Display', serif", fontStyle: 'italic', fontWeight: 400 }}>Recruitment</span> Tracker
                 </h1>
-                <span className="text-[10px] bg-slate-100 border border-slate-200 text-slate-500 px-2 py-0.5 rounded-full font-semibold">
+                <span className="text-xs font-extrabold bg-indigo-50 border border-indigo-200 text-indigo-700 px-3 py-1 rounded-full shadow-xs">
                   {filteredEmployees.length} / {employees.length} candidates
                 </span>
               </div>
 
               {/* RIGHT: Controls */}
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-2.5 flex-wrap">
                 {/* Sub-Sheet Selector */}
                 {availableTabs.length > 0 && (
-                  <div className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 px-2 py-1 rounded-lg">
-                    <label className="text-[10px] font-bold text-blue-800">Sub-Sheet:</label>
+                  <div className="flex items-center gap-2 bg-blue-50/80 border border-blue-200 px-3 py-1.5 rounded-xl shadow-xs">
+                    <label className="text-xs font-bold text-blue-900">Sub-Sheet:</label>
                     <select
                       value={activeTabName}
                       onChange={(e) => {
@@ -1970,7 +1970,7 @@ export default function DashboardPage() {
                         setActiveTabName(tabVal)
                         fetchEmployees(token, searchQuery, activeSheetId, tabVal)
                       }}
-                      className="text-[10px] font-bold py-0.5 px-2 rounded border bg-white border-blue-300 text-blue-900 focus:outline-none focus:border-blue-500 shadow-sm"
+                      className="text-xs font-bold py-1 px-2.5 rounded-lg border bg-white border-blue-300 text-blue-950 focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-xs cursor-pointer"
                     >
                       {availableTabs.map((t, idx) => (
                         <option key={idx} value={t}>{t}</option>
@@ -1980,8 +1980,8 @@ export default function DashboardPage() {
                 )}
 
                 {/* Date filter */}
-                <div className="flex items-center gap-1.5">
-                  <label className="text-[10px] font-bold text-slate-500">Filter Date:</label>
+                <div className="flex items-center gap-2 bg-white border border-slate-200 px-3 py-1.5 rounded-xl shadow-xs">
+                  <label className="text-xs font-bold text-slate-600">Filter Date:</label>
                   <input
                     type="date"
                     value={selectedCustomDate}
@@ -1989,12 +1989,12 @@ export default function DashboardPage() {
                       setSelectedCustomDate(e.target.value)
                       if (e.target.value) setDateFilter('all')
                     }}
-                    className="px-2 py-1 rounded-lg text-[10px] font-bold border bg-white border-slate-200 text-slate-900 focus:outline-none focus:border-blue-400"
+                    className="px-2 py-0.5 rounded-md text-xs font-semibold border-0 text-slate-900 focus:outline-none cursor-pointer"
                   />
                   {selectedCustomDate && (
                     <button
                       onClick={() => setSelectedCustomDate('')}
-                      className="text-[9px] bg-red-500/10 hover:bg-red-500/20 text-red-500 px-1.5 py-0.5 rounded border border-red-200 transition-colors"
+                      className="text-[10px] font-bold bg-rose-50 hover:bg-rose-100 text-rose-600 px-2 py-0.5 rounded-md border border-rose-200 transition-colors"
                     >
                       ✕ Clear
                     </button>
@@ -2005,15 +2005,15 @@ export default function DashboardPage() {
                 <button
                   onClick={handleSync}
                   disabled={syncing}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all shadow-sm ${
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold border transition-all shadow-xs ${
                     syncing
                       ? 'bg-emerald-50 border-emerald-300 text-emerald-600 cursor-not-allowed'
-                      : 'bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 border-emerald-600 text-white shadow-emerald-500/20'
+                      : 'bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 border-emerald-700 text-white shadow-emerald-600/20'
                   }`}
                   title="Re-fetch latest data from Google Sheets"
                 >
                   <svg
-                    className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`}
+                    className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`}
                     fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -2022,22 +2022,23 @@ export default function DashboardPage() {
                 </button>
 
                 {lastSynced && (
-                  <span className="text-[9px] text-emerald-600 font-semibold bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-md">
-                    ✓ Synced {lastSynced}
+                  <span className="text-xs text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-2.5 py-1.5 rounded-xl shadow-xs">
+                    ✓ {lastSynced}
                   </span>
                 )}
 
                 {/* EXPORT */}
                 <button
                   onClick={downloadExcelReport}
-                  className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold shadow shadow-blue-600/15 transition-all"
+                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow-xs shadow-blue-600/20 transition-all"
                 >
-                  <Download className="w-3.5 h-3.5" /> Export Report
+                  <Download className="w-4 h-4" /> Export Report
                 </button>
               </div>
             </div>
 
-            <div className="w-full overflow-auto border rounded-xl shadow-sm bg-white border-slate-200" style={{ height: 'calc(100vh - 175px)', minHeight: 0 }}>
+            {/* TABLE CONTAINER */}
+            <div className="w-full overflow-auto border rounded-2xl shadow-sm bg-white border-slate-200/90" style={{ height: 'calc(100vh - 210px)', minHeight: '520px' }}>
               {(() => {
                 const ignoredKeys = ['pending_documents', 'birthday']
                 const allKeysSet = new Set<string>()
@@ -2052,49 +2053,88 @@ export default function DashboardPage() {
                 }
                 const dynamicHeaders = Array.from(allKeysSet)
 
+                const getStatusStyle = (statusStr: string) => {
+                  const lower = statusStr.toLowerCase()
+                  if (lower.includes('join') || lower.includes('selected') || lower.includes('shortlist') || lower.includes('accept')) {
+                    return 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  }
+                  if (lower.includes('reject') || lower.includes('decline') || lower.includes('fail')) {
+                    return 'bg-rose-50 text-rose-700 border-rose-200'
+                  }
+                  if (lower.includes('schedul') || lower.includes('offer') || lower.includes('interview')) {
+                    return 'bg-violet-50 text-violet-700 border-violet-200'
+                  }
+                  if (lower.includes('screen') || lower.includes('pending') || lower.includes('hold')) {
+                    return 'bg-amber-50 text-amber-700 border-amber-200'
+                  }
+                  return 'bg-blue-50 text-blue-700 border-blue-200'
+                }
+
                 return (
-                  <table className="text-[10px] text-left w-full border-separate border-spacing-0 min-w-max">
-                    <thead className="sticky top-0 z-30 uppercase tracking-wider font-extrabold shadow-[0_2px_8px_rgba(0,0,0,0.15)]">
-                      <tr className="bg-slate-700 text-white">
+                  <table className="text-xs sm:text-sm text-left w-full border-separate border-spacing-0 min-w-max">
+                    <thead className="sticky top-0 z-30 uppercase tracking-wider font-extrabold shadow-[0_2px_8px_rgba(0,0,0,0.12)]">
+                      <tr className="bg-slate-800 text-slate-100">
                         {dynamicHeaders.length > 0 ? (
-                          dynamicHeaders.map((header, hIdx) => (
-                            <th
-                              key={hIdx}
-                              className={`p-3 whitespace-nowrap bg-slate-700 ${
-                                hIdx === 0 ? 'sticky left-0 z-40 bg-slate-800 border-r border-b border-slate-600 text-white font-extrabold' : 'border-b border-slate-600'
-                              }`}
-                            >
-                              {header}
-                            </th>
-                          ))
+                          dynamicHeaders.map((header, hIdx) => {
+                            const hLower = header.toLowerCase()
+                            let minW = 'min-w-[150px]'
+                            if (hLower.includes('email')) minW = 'min-w-[220px]'
+                            else if (hLower.includes('name')) minW = 'min-w-[180px]'
+                            else if (hLower.includes('designation') || hLower.includes('title')) minW = 'min-w-[180px]'
+                            else if (hLower.includes('status')) minW = 'min-w-[170px]'
+                            else if (hIdx === 0) minW = 'min-w-[100px]'
+
+                            return (
+                              <th
+                                key={hIdx}
+                                className={`px-4 py-3.5 whitespace-nowrap bg-slate-800 text-[11px] font-extrabold tracking-wider ${minW} ${
+                                  hIdx === 0
+                                    ? 'sticky left-0 z-40 bg-slate-900 border-r border-b border-slate-700 text-white font-black'
+                                    : 'border-b border-slate-700 text-slate-200'
+                                }`}
+                              >
+                                {header}
+                              </th>
+                            )
+                          })
                         ) : (
-                          <th className="p-3 bg-slate-700 text-white">No Columns Available</th>
+                          <th className="p-4 bg-slate-800 text-white text-xs font-bold">No Columns Available</th>
                         )}
                       </tr>
                     </thead>
-                    <tbody className={`divide-y ${isDark ? 'divide-blue-955/50' : 'divide-slate-200'}`}>
+                    <tbody className="divide-y divide-slate-100">
                       {paginatedEmployees.map((emp, index) => (
-                        <tr key={index} className={`transition-colors hover:bg-blue-50 ${isDark ? 'text-slate-300' : 'text-slate-800'}`}>
+                        <tr key={index} className="transition-colors hover:bg-indigo-50/70 even:bg-slate-50/50 odd:bg-white text-slate-700">
                           {dynamicHeaders.map((header, hIdx) => {
                             const val = emp[header]
                             const strVal = val !== undefined && val !== null ? String(val).trim() : ''
+                            const hLower = header.toLowerCase()
+                            let minW = 'min-w-[150px]'
+                            if (hLower.includes('email')) minW = 'min-w-[220px]'
+                            else if (hLower.includes('name')) minW = 'min-w-[180px]'
+                            else if (hLower.includes('designation') || hLower.includes('title')) minW = 'min-w-[180px]'
+                            else if (hLower.includes('status')) minW = 'min-w-[170px]'
+                            else if (hIdx === 0) minW = 'min-w-[100px]'
+
                             return (
                               <td
                                 key={hIdx}
-                                className={`py-2 px-3 whitespace-nowrap ${
-                                  hIdx === 0 ? 'sticky left-0 z-20 border-r border-b border-slate-200 bg-slate-50 font-bold text-slate-900' : ''
+                                className={`py-3 px-4 whitespace-nowrap text-xs sm:text-sm font-medium ${minW} ${
+                                  hIdx === 0
+                                    ? 'sticky left-0 z-20 border-r border-b border-slate-200 bg-slate-100/95 font-bold text-slate-900 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)]'
+                                    : 'border-b border-slate-100'
                                 }`}
                               >
                                 {strVal ? (
-                                  header.toLowerCase().includes('status') ? (
-                                    <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-blue-500/10 text-blue-500 border border-blue-500/20">
+                                  hLower.includes('status') ? (
+                                    <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold border ${getStatusStyle(strVal)}`}>
                                       {strVal}
                                     </span>
                                   ) : (
                                     strVal
                                   )
                                 ) : (
-                                  '-'
+                                  <span className="text-slate-300 font-normal">-</span>
                                 )}
                               </td>
                             )
