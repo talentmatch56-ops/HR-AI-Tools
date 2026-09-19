@@ -275,7 +275,14 @@ async def list_employees(
         cache_key = f"employees_search_{query.strip().lower()}_{sheet_id or 'default'}_{target_tab}"
 
     # Skip cache entirely when force_refresh=true (Real-time Sync button)
-    if not force_refresh:
+    if force_refresh:
+        try:
+            from server import sheets
+            if hasattr(sheets, 'clear_cache'):
+                sheets.clear_cache()
+        except Exception:
+            pass
+    else:
         cached_data = redis_cache.get(cache_key)
         if cached_data is not None:
             return cached_data
@@ -285,13 +292,13 @@ async def list_employees(
         if query:
             res = sheets.search_employee(name=query, sheet_id=sheet_id)
         else:
-            res = sheets.read_sheet(target_tab, sheet_id=sheet_id)
+            res = sheets.read_sheet(target_tab, sheet_id=sheet_id, force_refresh=force_refresh)
 
         if not res:
             res = sheets.employees
 
-        # Refresh cache with latest data
-        redis_cache.set(cache_key, res, expire_seconds=10)
+        # Refresh cache with latest data for 120s
+        redis_cache.set(cache_key, res, expire_seconds=120)
         return res
     except Exception as e:
         from server import sheets

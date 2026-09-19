@@ -96,8 +96,17 @@ MOCK_SETTINGS = {
 }
 
 
+_in_memory_cache: Dict[tuple, tuple] = {}
+_CACHE_TTL = 120  # Cache Google Sheet data in memory for 2 minutes
+
 class GoogleSheetsHelper:
+    @classmethod
+    def clear_cache(cls):
+        global _in_memory_cache
+        _in_memory_cache.clear()
+
     def __init__(self):
+
         # Load env variables from root .env
         import os
         from dotenv import load_dotenv
@@ -287,8 +296,15 @@ class GoogleSheetsHelper:
 
         return mapped_data
 
-    def read_sheet(self, sheet_name: str, sheet_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    def read_sheet(self, sheet_name: str, sheet_id: Optional[str] = None, force_refresh: bool = False) -> List[Dict[str, Any]]:
         active_sheet_id = sheet_id or self.sheet_id
+        cache_key = (active_sheet_id, sheet_name)
+
+        import time
+        if not force_refresh and cache_key in _in_memory_cache:
+            cached_time, cached_data = _in_memory_cache[cache_key]
+            if time.time() - cached_time < _CACHE_TTL:
+                return cached_data
         
         # 1. Try Google Sheets API if service is available
         if not self.is_mock and hasattr(self, 'service'):
@@ -320,6 +336,7 @@ class GoogleSheetsHelper:
                 if rows:
                     processed = self._process_rows(rows)
                     if processed:
+                        _in_memory_cache[cache_key] = (time.time(), processed)
                         return processed
             except Exception as e:
                 logger.error(f"Google Sheets API read failed for {active_sheet_id}: {e}")
@@ -343,6 +360,7 @@ class GoogleSheetsHelper:
                         if rows and len(rows) > 1:
                             processed = self._process_rows(rows)
                             if processed:
+                                _in_memory_cache[cache_key] = (time.time(), processed)
                                 return processed
                 except Exception:
                     # Fallback to default tab if specific tab fails
@@ -356,6 +374,7 @@ class GoogleSheetsHelper:
                         if rows and len(rows) > 1:
                             processed = self._process_rows(rows)
                             if processed:
+                                _in_memory_cache[cache_key] = (time.time(), processed)
                                 return processed
             except Exception as e:
                 logger.warning(f"Public CSV fetch failed for {active_sheet_id}: {e}")

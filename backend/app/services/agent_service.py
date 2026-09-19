@@ -149,7 +149,7 @@ class AgentService:
             messages.append({"role": "user", "content": message})
 
             response = self.client.chat.completions.create(
-                model="gpt-4o",
+                model="gpt-4o-mini",
                 messages=messages,
                 tools=tools if tools else None,
                 tool_choice="auto"
@@ -198,7 +198,7 @@ class AgentService:
                         })
                 
                 final_response = self.client.chat.completions.create(
-                    model="gpt-4o",
+                    model="gpt-4o-mini",
                     messages=tool_messages
                 )
                 
