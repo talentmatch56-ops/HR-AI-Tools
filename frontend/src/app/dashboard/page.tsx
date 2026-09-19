@@ -261,10 +261,7 @@ const getApiUrl = () => {
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL.replace(/\/+$/, '')
   }
-  if (typeof window !== 'undefined' && !window.location.hostname.includes('localhost')) {
-    return 'https://hr-ai-tools.onrender.com'
-  }
-  return 'http://localhost:8000'
+  return 'https://hr-ai-tools.onrender.com'
 }
 
 export default function DashboardPage() {
@@ -1754,7 +1751,7 @@ export default function DashboardPage() {
                         <div className="mt-3 pt-3 border-t border-blue-800/40 space-y-2">
                           {msg.steps.map((s, idx) => {
                             if (s.response && s.response.download_url) {
-                              const url = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000') + s.response.download_url
+                              const url = getApiUrl() + s.response.download_url
                               return (
                                 <a
                                   key={idx}
