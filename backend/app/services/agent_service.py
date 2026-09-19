@@ -462,39 +462,56 @@ class AgentService:
             steps.append({"tool": "search_employee", "arguments": args, "status": "success", "response": res})
             
             if isinstance(res, list) and len(res) > 0:
-                emp = res[0]
-                response_text = (
-                    f"### 📋 Candidate Profile: {emp.get('name')}\n\n"
-                    f"| Field | Detail |\n"
-                    f"| :--- | :--- |\n"
-                    f"| **No. / ID** | {emp.get('employee_id')} |\n"
-                    f"| **Email ID** | {emp.get('email')} |\n"
-                    f"| **Contact number** | {emp.get('contact_number') or 'N/A'} |\n"
-                    f"| **Status** | **{emp.get('status')}** |\n"
-                    f"| **Recruiter Name** | {emp.get('recruiter_name') or 'N/A'} |\n"
-                    f"| **Accountable** | {emp.get('accountable') or 'N/A'} |\n"
-                    f"| **Technology (Job Title)** | {emp.get('designation')} |\n"
-                    f"| **Tech/Non Tech** | {emp.get('tech_non_tech') or 'N/A'} |\n"
-                    f"| **Opening For** | {emp.get('department') or 'N/A'} |\n"
-                    f"| **Source** | {emp.get('source') or 'N/A'} |\n"
-                    f"| **Date Applied** | {emp.get('joining_date')} |\n"
-                    f"| **Month** | {emp.get('month') or 'N/A'} |\n"
-                    f"| **Total Experience** | {emp.get('total_experience') or 'N/A'} |\n"
-                    f"| **Relevant Experience** | {emp.get('relevant_experience') or 'N/A'} |\n"
-                    f"| **Current Company** | {emp.get('current_company') or 'N/A'} |\n"
-                    f"| **Current CTC** | {emp.get('current_ctc') or 'N/A'} |\n"
-                    f"| **Expected CTC** | {emp.get('expected_ctc') or 'N/A'} |\n"
-                    f"| **Notice Period** | {emp.get('notice_period') or 'N/A'} Days/Months |\n"
-                    f"| **Location** | {emp.get('location') or 'N/A'} |\n"
-                    f"| **Job Change Reason** | {emp.get('job_change_reason') or 'N/A'} |\n"
-                    f"| **1st Round Mode** | {emp.get('interview_mode_1st') or 'N/A'} (Date: {emp.get('interview_date_1st') or 'N/A'}) |\n"
-                    f"| **Interviewer (1st Round)** | {emp.get('interviewer_1st') or 'N/A'} (Result: {emp.get('status_1st') or 'N/A'}) |\n"
-                    f"| **2nd/Final Round Mode** | {emp.get('interview_mode_2nd') or 'N/A'} (Date: {emp.get('interview_date_2nd') or 'N/A'}) |\n"
-                    f"| **Interviewer (2nd Round)** | {emp.get('interviewer_2nd') or 'N/A'} (Result: {emp.get('status_2nd') or 'N/A'}) |\n"
-                    f"| **CTC Offered** | {emp.get('ctc_offered') or 'N/A'} (Joining: {emp.get('offered_joining_date') or 'N/A'}) |\n"
-                    f"| **Vendor Name** | {emp.get('vendor_name') or 'N/A'} |\n"
-                    f"| **Remarks** | *{emp.get('recruiters_remarks') or 'None'}* |\n"
-                )
+                if len(res) == 1:
+                    emp = res[0]
+                    response_text = (
+                        f"### 📋 Candidate Profile: {emp.get('name')}\n\n"
+                        f"| Field | Detail |\n"
+                        f"| :--- | :--- |\n"
+                        f"| **No. / ID** | {emp.get('employee_id')} |\n"
+                        f"| **Email ID** | {emp.get('email')} |\n"
+                        f"| **Contact number** | {emp.get('contact_number') or 'N/A'} |\n"
+                        f"| **Status** | **{emp.get('status')}** |\n"
+                        f"| **Recruiter Name** | {emp.get('recruiter_name') or 'N/A'} |\n"
+                        f"| **Accountable** | {emp.get('accountable') or 'N/A'} |\n"
+                        f"| **Technology (Job Title)** | {emp.get('designation')} |\n"
+                        f"| **Tech/Non Tech** | {emp.get('tech_non_tech') or 'N/A'} |\n"
+                        f"| **Opening For** | {emp.get('department') or 'N/A'} |\n"
+                        f"| **Source** | {emp.get('source') or 'N/A'} |\n"
+                        f"| **Date Applied** | {emp.get('joining_date')} |\n"
+                        f"| **Month** | {emp.get('month') or 'N/A'} |\n"
+                        f"| **Total Experience** | {emp.get('total_experience') or 'N/A'} |\n"
+                        f"| **Relevant Experience** | {emp.get('relevant_experience') or 'N/A'} |\n"
+                        f"| **Current Company** | {emp.get('current_company') or 'N/A'} |\n"
+                        f"| **Current CTC** | {emp.get('current_ctc') or 'N/A'} |\n"
+                        f"| **Expected CTC** | {emp.get('expected_ctc') or 'N/A'} |\n"
+                        f"| **Notice Period** | {emp.get('notice_period') or 'N/A'} Days/Months |\n"
+                        f"| **Location** | {emp.get('location') or 'N/A'} |\n"
+                        f"| **Job Change Reason** | {emp.get('job_change_reason') or 'N/A'} |\n"
+                        f"| **1st Round Mode** | {emp.get('interview_mode_1st') or 'N/A'} (Date: {emp.get('interview_date_1st') or 'N/A'}) |\n"
+                        f"| **Interviewer (1st Round)** | {emp.get('interviewer_1st') or 'N/A'} (Result: {emp.get('status_1st') or 'N/A'}) |\n"
+                        f"| **2nd/Final Round Mode** | {emp.get('interview_mode_2nd') or 'N/A'} (Date: {emp.get('interview_date_2nd') or 'N/A'}) |\n"
+                        f"| **Interviewer (2nd Round)** | {emp.get('interviewer_2nd') or 'N/A'} (Result: {emp.get('status_2nd') or 'N/A'}) |\n"
+                        f"| **CTC Offered** | {emp.get('ctc_offered') or 'N/A'} (Joining: {emp.get('offered_joining_date') or 'N/A'}) |\n"
+                        f"| **Vendor Name** | {emp.get('vendor_name') or 'N/A'} |\n"
+                        f"| **Remarks** | *{emp.get('recruiters_remarks') or 'None'}* |\n"
+                    )
+                else:
+                    response_text = f"### 🔍 Found {len(res)} Matching Candidate Records for '{target_name}':\n\n"
+                    response_text += "| No. | Candidate Name | Technology | Status | Recruiter | Email |\n"
+                    response_text += "| :--- | :--- | :--- | :--- | :--- | :--- |\n"
+                    for emp in res[:10]:
+                        response_text += f"| {emp.get('employee_id')} | **{emp.get('name')}** | {emp.get('designation')} | **{emp.get('status')}** | {emp.get('recruiter_name') or 'N/A'} | {emp.get('email')} |\n"
+                    
+                    response_text += f"\n\n#### Detailed Profiles:\n"
+                    for idx, emp in enumerate(res[:5]):
+                        response_text += (
+                            f"\n**{idx+1}. {emp.get('name')} ({emp.get('designation')})**\n"
+                            f"- **Status**: {emp.get('status')}\n"
+                            f"- **Email**: {emp.get('email')}\n"
+                            f"- **Recruiter**: {emp.get('recruiter_name') or 'N/A'}\n"
+                            f"- **Date**: {emp.get('joining_date')}\n"
+                        )
             else:
                 response_text = f"I couldn't find any employee matching '{target_name}' in your Google Sheet."
             return {"response": response_text, "steps": steps}

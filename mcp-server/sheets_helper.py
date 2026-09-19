@@ -424,8 +424,29 @@ class GoogleSheetsHelper:
             return False
 
     def search_employee(self, name: str, sheet_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        q = name.lower().strip()
+        if not q:
+            return []
+            
+        # 1. Search Master Recruitment Tracker 2026
         employees = self.read_sheet("Master Recruitment Tracker 2026", sheet_id=sheet_id)
-        return [emp for emp in employees if name.lower() in emp.get("name", "").lower()]
+        results = []
+        for emp in employees:
+            emp_name = str(emp.get("name", "")).lower()
+            emp_all = " ".join(str(v).lower() for v in emp.values() if v is not None)
+            if q in emp_name or q in emp_all:
+                results.append(emp)
+
+        # 2. Search Shortlisting Tracker 2026 tab if no results found
+        if not results:
+            shortlisted = self.read_sheet("Shortlisting Tracker 2026", sheet_id=sheet_id)
+            for emp in shortlisted:
+                emp_name = str(emp.get("name", "")).lower()
+                emp_all = " ".join(str(v).lower() for v in emp.values() if v is not None)
+                if q in emp_name or q in emp_all:
+                    results.append(emp)
+
+        return results
 
     def get_employee(self, employee_id: str) -> Optional[Dict[str, Any]]:
         employees = self.read_sheet("Master Recruitment Tracker 2026")
