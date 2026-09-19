@@ -1205,6 +1205,16 @@ export default function DashboardPage() {
     return null;
   };
 
+  const getCandidateDateString = (emp: any): string => {
+    if (!emp) return 'No Date';
+    const dObj = getCandidateDate(emp);
+    if (dObj) {
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return `${dObj.getDate()}-${months[dObj.getMonth()]}-${dObj.getFullYear()}`;
+    }
+    return (emp as any)['Month'] || (emp as any).month || (emp as any).joining_date || (emp as any).date || (emp as any)['Date'] || 'No Date';
+  };
+
   const candidateDates = employees
     .map(emp => getCandidateDate(emp))
     .filter((d): d is Date => d !== null);
@@ -1233,7 +1243,7 @@ export default function DashboardPage() {
     } else if (dateFilter === 'week') {
       return diffDays <= 7;
     } else if (dateFilter === 'month') {
-      return diffDays <= 90;
+      return diffDays <= 180;
     }
     return true;
   });
@@ -3230,7 +3240,7 @@ export default function DashboardPage() {
 
           filteredEmployees.forEach(emp => {
             const tech = getTechName(emp)
-            const dStr = emp.joining_date || 'No Date'
+            const dStr = getCandidateDateString(emp)
 
             if (!techStatsMap[tech]) {
               techStatsMap[tech] = { total: 0, toScreen: 0, selected: 0, interviewed: 0, rejected: 0, offered: 0, joined: 0 }
