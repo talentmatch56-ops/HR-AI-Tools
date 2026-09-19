@@ -3169,6 +3169,7 @@ export default function DashboardPage() {
             return raw.trim() || 'Other'
           }
 
+          // Technology statistics map
           const techStatsMap: Record<string, {
             total: number;
             toScreen: number;
@@ -3179,8 +3180,13 @@ export default function DashboardPage() {
             joined: number;
           }> = {}
 
+          // Date-wise statistics map
+          const dateTechMap: Record<string, Record<string, number>> = {}
+
           filteredEmployees.forEach(emp => {
             const tech = getTechName(emp)
+            const dStr = emp.joining_date || 'No Date'
+
             if (!techStatsMap[tech]) {
               techStatsMap[tech] = { total: 0, toScreen: 0, selected: 0, interviewed: 0, rejected: 0, offered: 0, joined: 0 }
             }
@@ -3200,10 +3206,25 @@ export default function DashboardPage() {
             } else {
               techStatsMap[tech].toScreen += 1
             }
+
+            // Date breakdown
+            if (!dateTechMap[dStr]) dateTechMap[dStr] = {}
+            dateTechMap[dStr][tech] = (dateTechMap[dStr][tech] || 0) + 1
           })
 
           const allTechList = Object.keys(techStatsMap).sort((a, b) => techStatsMap[b].total - techStatsMap[a].total)
           const displayedTechs = techFilter === 'ALL' ? allTechList : allTechList.filter(t => t.toLowerCase() === techFilter.toLowerCase() || t.toLowerCase().includes(techFilter.toLowerCase()))
+
+          const sortedDates = Object.keys(dateTechMap).sort((a, b) => {
+            const dA = parseDate(a)
+            const dB = parseDate(b)
+            if (dA && dB) return dB.getTime() - dA.getTime()
+            return a.localeCompare(b)
+          })
+
+          const maxDateCount = sortedDates.length > 0
+            ? Math.max(...sortedDates.map(d => Object.values(dateTechMap[d]).reduce((sum, c) => sum + c, 0)))
+            : 1
 
           const totalCandidates = filteredEmployees.length
           let totalToScreen = 0
@@ -3228,7 +3249,7 @@ export default function DashboardPage() {
           return (
             <div className="w-full space-y-6 font-sans p-1 md:p-2">
               {/* TOP BANNER & CONTROLS */}
-              <div className="p-5 md:p-6 rounded-2xl bg-white dark:bg-[#0c122b] border border-slate-200 dark:border-blue-900/40 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="p-5 md:p-6 rounded-2xl bg-white dark:bg-[#0c122b] border border-slate-200 dark:border-blue-900/40 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2">
                     <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400">
@@ -3239,13 +3260,79 @@ export default function DashboardPage() {
                     </h2>
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">
-                    Technology-wise candidate analytics, status breakdown, visual charts & conversion matrix
+                    Technology-wise and Date-wise candidate analytics, status breakdown, sourcing timeline & conversion matrix
                   </p>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2">
-                    <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Filter Tech:</label>
+                {/* FILTERS TOOLBAR (DATE + TECH) */}
+                <div className="flex flex-wrap items-center gap-3">
+                  {/* Date Filter Quick Pills */}
+                  <div className="flex items-center gap-1 bg-slate-100 dark:bg-blue-950/60 p-1 rounded-xl border border-slate-200 dark:border-blue-900/50">
+                    <button
+                      onClick={() => { setDateFilter('all'); setSelectedCustomDate(''); }}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                        dateFilter === 'all' && !selectedCustomDate
+                          ? 'bg-blue-600 text-white shadow-xs'
+                          : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      All Time
+                    </button>
+                    <button
+                      onClick={() => { setDateFilter('day'); setSelectedCustomDate(''); }}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                        dateFilter === 'day' && !selectedCustomDate
+                          ? 'bg-blue-600 text-white shadow-xs'
+                          : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      Today
+                    </button>
+                    <button
+                      onClick={() => { setDateFilter('week'); setSelectedCustomDate(''); }}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                        dateFilter === 'week' && !selectedCustomDate
+                          ? 'bg-blue-600 text-white shadow-xs'
+                          : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      7 Days
+                    </button>
+                    <button
+                      onClick={() => { setDateFilter('month'); setSelectedCustomDate(''); }}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                        dateFilter === 'month' && !selectedCustomDate
+                          ? 'bg-blue-600 text-white shadow-xs'
+                          : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      30 Days
+                    </button>
+                  </div>
+
+                  {/* Specific Date Picker */}
+                  <div className="flex items-center gap-1 bg-slate-50 dark:bg-blue-950/50 px-2.5 py-1 rounded-xl border border-slate-200 dark:border-blue-900">
+                    <span className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400">Date:</span>
+                    <input
+                      type="date"
+                      value={selectedCustomDate}
+                      onChange={(e) => setSelectedCustomDate(e.target.value)}
+                      className="bg-transparent text-xs font-semibold text-slate-800 dark:text-white focus:outline-none"
+                    />
+                    {selectedCustomDate && (
+                      <button
+                        onClick={() => setSelectedCustomDate('')}
+                        className="text-xs text-red-500 font-bold hover:text-red-700 ml-1"
+                        title="Clear custom date"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Technology Filter Selector */}
+                  <div className="flex items-center gap-1.5">
+                    <label className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400">Tech Stack:</label>
                     <select
                       value={techFilter}
                       onChange={(e) => setTechFilter(e.target.value)}
@@ -3312,8 +3399,8 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* VISUAL CHARTS ROW */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {/* VISUAL CHARTS ROW (3 COLUMNS) */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
                 {/* Visual Chart 1: Tech-wise Candidate Volume */}
                 <div className="p-5 md:p-6 rounded-2xl bg-white dark:bg-[#0c122b] border border-slate-200 dark:border-blue-900/40 shadow-sm space-y-4">
                   <div className="flex items-center justify-between border-b border-slate-100 dark:border-blue-900/40 pb-3">
@@ -3403,6 +3490,65 @@ export default function DashboardPage() {
                         </div>
                       )
                     })}
+                  </div>
+                </div>
+
+                {/* Visual Chart 3: Date-Wise Candidate Intake Timeline */}
+                <div className="p-5 md:p-6 rounded-2xl bg-white dark:bg-[#0c122b] border border-slate-200 dark:border-blue-900/40 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-blue-900/40 pb-3">
+                    <div>
+                      <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">Date-Wise Sourcing Timeline</h3>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">Daily candidate intake & tech breakdown</p>
+                    </div>
+                    <span className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">
+                      Date Trend
+                    </span>
+                  </div>
+
+                  <div className="space-y-3.5 max-h-[320px] overflow-y-auto pr-1">
+                    {sortedDates.slice(0, 10).map((dStr) => {
+                      const techObj = dateTechMap[dStr]
+                      const totalOnDate = Object.values(techObj).reduce((sum, c) => sum + c, 0)
+                      const pct = Math.round((totalOnDate / maxDateCount) * 100)
+
+                      return (
+                        <div key={dStr} className="space-y-1.5">
+                          <div className="flex justify-between items-center text-xs font-semibold">
+                            <span className="text-slate-700 dark:text-slate-200 font-bold flex items-center gap-1.5">
+                              📅 <span>{dStr}</span>
+                            </span>
+                            <span className="text-slate-900 dark:text-white font-extrabold">
+                              {totalOnDate} Candidate{totalOnDate !== 1 ? 's' : ''}
+                            </span>
+                          </div>
+                          
+                          {/* Mini progress bar */}
+                          <div className="w-full bg-slate-100 dark:bg-blue-950/60 h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-200/50 dark:border-blue-900/30">
+                            <div
+                              className="h-full rounded-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 transition-all duration-700"
+                              style={{ width: `${Math.max(pct, 5)}%` }}
+                            />
+                          </div>
+
+                          {/* Tech pills for this date */}
+                          <div className="flex flex-wrap gap-1 pt-0.5">
+                            {Object.entries(techObj).map(([tName, tCnt]) => (
+                              <span
+                                key={tName}
+                                onClick={() => setTechFilter(tName)}
+                                className="px-2 py-0.5 rounded-md text-[9.5px] font-bold bg-slate-100 dark:bg-blue-950/80 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-blue-900/60 hover:bg-blue-50 hover:text-blue-600 transition-colors cursor-pointer"
+                              >
+                                {tName}: <strong className="text-blue-600 dark:text-blue-400">{tCnt}</strong>
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    })}
+
+                    {sortedDates.length === 0 && (
+                      <p className="text-xs text-slate-400 text-center py-6">No date records found for selected period.</p>
+                    )}
                   </div>
                 </div>
               </div>
