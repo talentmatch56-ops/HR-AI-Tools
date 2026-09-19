@@ -269,6 +269,18 @@ const getApiUrl = () => {
   return 'https://hr-ai-tools.onrender.com'
 }
 
+const safeFetch = async (url: string, init?: RequestInit): Promise<Response> => {
+  try {
+    return await fetch(url, init)
+  } catch (err) {
+    if (url.includes('localhost:8000') || url.includes('127.0.0.1:8000')) {
+      const fallbackUrl = url.replace(/http:\/\/(localhost|127\.0\.0\.1):8000/, 'https://hr-ai-tools.onrender.com')
+      return await fetch(fallbackUrl, init)
+    }
+    throw err
+  }
+}
+
 export default function DashboardPage() {
   const router = useRouter()
   const chatEndRef = useRef<HTMLDivElement>(null)
@@ -406,7 +418,7 @@ export default function DashboardPage() {
       const currentTab = tabName || activeTabName
       if (currentTab) url += `&tab=${encodeURIComponent(currentTab)}`
 
-      const res = await fetch(url)
+      const res = await safeFetch(url)
       if (res.ok) {
         const data = await res.json()
         setEmployees(data)
@@ -420,7 +432,7 @@ export default function DashboardPage() {
     if (!sheetId) return
     try {
       const apiUrl = getApiUrl()
-      const res = await fetch(`${apiUrl}/sheets/tabs?token=${jwtToken}&sheet_id=${encodeURIComponent(sheetId)}`)
+      const res = await safeFetch(`${apiUrl}/sheets/tabs?token=${jwtToken}&sheet_id=${encodeURIComponent(sheetId)}`)
       if (res.ok) {
         const tabs = await res.json()
         setAvailableTabs(tabs || [])
@@ -438,7 +450,7 @@ export default function DashboardPage() {
   const fetchRegisteredSheets = async (jwtToken: string) => {
     try {
       const apiUrl = getApiUrl()
-      const res = await fetch(`${apiUrl}/sheets?token=${jwtToken}`)
+      const res = await safeFetch(`${apiUrl}/sheets?token=${jwtToken}`)
       if (res.ok) {
         const data = await res.json()
         setRegisteredSheets(data)
@@ -451,7 +463,7 @@ export default function DashboardPage() {
   const fetchAuditLogs = async (jwtToken: string) => {
     try {
       const apiUrl = getApiUrl()
-      const res = await fetch(`${apiUrl}/audit/logs?token=${jwtToken}`)
+      const res = await safeFetch(`${apiUrl}/audit/logs?token=${jwtToken}`)
       if (res.ok) {
         const data = await res.json()
         setAuditLogs(data.reverse())
@@ -548,7 +560,7 @@ export default function DashboardPage() {
       let url = `${apiUrl}/employees?token=${token}&force_refresh=true`
       if (searchQuery) url += `&query=${encodeURIComponent(searchQuery)}`
       if (activeSheetId) url += `&sheet_id=${encodeURIComponent(activeSheetId)}`
-      const res = await fetch(url)
+      const res = await safeFetch(url)
       if (res.ok) {
         const data = await res.json()
         setEmployees(data)
