@@ -255,6 +255,8 @@ const cleanString = (str: string | null | undefined): string => {
     .replace(/âš¡/g, '⚡')
     .replace(/âœ“/g, '✓')
     .replace(/â/g, '') // remove trailing raw 'â' characters from mangled encoding
+}
+
 const getApiUrl = () => {
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL.replace(/\/+$/, '')
