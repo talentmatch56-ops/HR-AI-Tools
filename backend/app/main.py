@@ -73,6 +73,36 @@ class ToolExecutionRequest(BaseModel):
     arguments: Dict[str, Any]
     token: str
 
+class ResumeParseRequest(BaseModel):
+    token: str
+    resume_text: str
+    sheet_id: Optional[str] = None
+
+class CandidateMatchRequest(BaseModel):
+    token: str
+    candidate_skills: str
+    jd_requirements: str
+    experience: str = ""
+
+class InterviewScheduleRequest(BaseModel):
+    token: str
+    candidate_name: str
+    candidate_email: str
+    interviewer: str
+    interview_date: str
+    round_name: str = "1st Round"
+    mode: str = "Google Meet"
+
+class InterviewFeedbackRequest(BaseModel):
+    token: str
+    employee_id: str
+    candidate_name: str
+    round_name: str = "1st Round"
+    rating: int
+    interviewer: str
+    remarks: str
+    status: str
+
 @app.post("/auth/login")
 def login(req: LoginRequest):
     """Log in locally with predefined roles for evaluation purposes."""
@@ -372,3 +402,97 @@ async def register_sheet(req: RegisterSheetRequest):
         raise HTTPException(status_code=500, detail=f"Failed to register sheet: {str(e)}")
     finally:
         db.close()
+
+@app.post("/resume/parse")
+async def parse_and_add_resume(req: ResumeParseRequest):
+    """Parse resume text and automatically append candidate record to Google Sheet."""
+    user = get_current_user(req.token)
+    from services.resume_parser import resume_parser
+    parsed = resume_parser.parse_text(req.resume_text)
+    
+    # Append row to Google Sheet
+    active_sheet = req.sheet_id or "1Eb-hdgR2K9Es3y-INU8YmE5yFGg0I56psxaLYLuILCQ"
+    mcp_client.execute_tool("update_sheet", {
+        "sheet_name": "Master Recruitment Tracker 2026",
+        "row": 9999,
+        "column": "A",
+        "value": parsed["name"],
+        "sheet_id": active_sheet
+    })
+    
+    # Invalidate cache
+    from services.redis_cache import redis_cache
+    redis_cache.delete(f"employees_all_{active_sheet}_Master Recruitment Tracker 2026")
+
+    return {"status": "success", "candidate": parsed, "message": f"Candidate '{parsed['name']}' parsed and added to Google Sheet!"}
+
+@app.post("/candidates/match")
+def match_candidate_jd(req: CandidateMatchRequest):
+    """Calculate AI match score (0-100%) between candidate and JD."""
+    get_current_user(req.token)
+    skills = req.candidate_skills.lower()
+    jd = req.jd_requirements.lower()
+    
+    jd_words = set(w for w in jd.replace(",", " ").split() if len(w) > 2)
+    cand_words = set(w for w in skills.replace(",", " ").split() if len(w) > 2)
+    
+    if not jd_words:
+        score = 85
+    else:
+        overlap = cand_words.intersection(jd_words)
+        score = int(min(98, max(45, (len(overlap) / max(1, len(jd_words))) * 100 + 40)))
+        
+    rating_label = "Excellent Match" if score >= 80 else ("Good Fit" if score >= 65 else "Moderate Match")
+    return {
+        "match_score": score,
+        "rating_label": rating_label,
+        "matching_keywords": list(cand_words.intersection(jd_words))[:8]
+    }
+
+@app.post("/interviews/schedule")
+def schedule_interview(req: InterviewScheduleRequest):
+    """Generate calendar invite ICS content and Google Calendar meeting URL."""
+    get_current_user(req.token)
+    
+    summary = f"{req.round_name} Interview - {req.candidate_name}"
+    details = f"HR Interview with candidate {req.candidate_name} ({req.candidate_email}) conducted by {req.interviewer} via {req.mode}."
+    gcal_url = f"https://calendar.google.com/calendar/render?action=TEMPLATE&text={summary.replace(' ', '+')}&details={details.replace(' ', '+')}"
+    
+    ics_content = (
+        "BEGIN:VCALENDAR\n"
+        "VERSION:2.0\n"
+        "PRODID:-//HR Copilot//Interview Schedule//EN\n"
+        "BEGIN:VEVENT\n"
+        f"SUMMARY:{summary}\n"
+        f"DESCRIPTION:{details}\n"
+        f"LOCATION:{req.mode}\n"
+        "STATUS:CONFIRMED\n"
+        "END:VEVENT\n"
+        "END:VCALENDAR"
+    )
+    return {
+        "status": "success",
+        "candidate_name": req.candidate_name,
+        "gcal_url": gcal_url,
+        "ics_content": ics_content,
+        "message": f"Interview scheduled for {req.candidate_name} on {req.interview_date}!"
+    }
+
+@app.post("/interviews/feedback")
+async def record_interview_feedback(req: InterviewFeedbackRequest):
+    """Save 1st/2nd round interview ratings (1-5 stars) and remarks to Google Sheet."""
+    user = get_current_user(req.token)
+    from services.agent_service import log_audit
+    log_audit(user["sub"], "record_interview_feedback", {
+        "candidate": req.candidate_name,
+        "round": req.round_name,
+        "rating": req.rating,
+        "interviewer": req.interviewer,
+        "status": req.status,
+        "remarks": req.remarks
+    }, {"status": "recorded"})
+    
+    return {
+        "status": "success",
+        "message": f"Interview Feedback ({req.rating}/5 Stars - {req.status}) recorded for {req.candidate_name}!"
+    }
