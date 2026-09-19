@@ -19,18 +19,32 @@ sheets = GoogleSheetsHelper()
 gmail = GmailHelper()
 docs = DocumentGenerator()
 
+def compact_json(data: Any, max_items: int = 40) -> str:
+    """Format tool responses into ultra-compact JSON to minimize LLM token latency."""
+    if isinstance(data, list):
+        cleaned = []
+        for item in data[:max_items]:
+            if isinstance(item, dict):
+                cleaned.append({k: v for k, v in item.items() if v not in [None, "", "-"]})
+            else:
+                cleaned.append(item)
+        return json.dumps(cleaned, separators=(',', ':'))
+    elif isinstance(data, dict):
+        cleaned = {k: v for k, v in data.items() if v not in [None, "", "-"]}
+        return json.dumps(cleaned, separators=(',', ':'))
+    return json.dumps(data, separators=(',', ':'))
+
 @mcp.tool()
 def search_employee(name: str, sheet_id: Optional[str] = None) -> str:
     """Search for employees by name in the Google Sheets database."""
     logger.info(f"Tool search_employee called with name={name}, sheet_id={sheet_id}")
     results = sheets.search_employee(name, sheet_id=sheet_id)
-    return json.dumps(results, indent=2)
+    return compact_json(results)
 
 @mcp.tool()
 def get_employee(employee_id: str, sheet_id: Optional[str] = None) -> str:
     """Retrieve detailed information for a specific employee by ID."""
     logger.info(f"Tool get_employee called with employee_id={employee_id}, sheet_id={sheet_id}")
-    # get_employee in sheets helper doesn't support sheet_id yet, let's implement it inside sheets helper if needed or do it here:
     employees = sheets.read_sheet("Master Recruitment Tracker 2026", sheet_id=sheet_id)
     result = None
     for emp in employees:
@@ -38,8 +52,8 @@ def get_employee(employee_id: str, sheet_id: Optional[str] = None) -> str:
             result = emp
             break
     if not result:
-        return json.dumps({"status": "error", "message": f"Employee {employee_id} not found."})
-    return json.dumps(result, indent=2)
+        return compact_json({"status": "error", "message": f"Employee {employee_id} not found."})
+    return compact_json(result)
 
 @mcp.tool()
 def search_google_sheet(query: str, sheet_id: Optional[str] = None) -> str:
@@ -52,14 +66,14 @@ def search_google_sheet(query: str, sheet_id: Optional[str] = None) -> str:
             if any(query.lower() in str(val).lower() for val in entry.values()):
                 entry["_sheet"] = category
                 results.append(entry)
-    return json.dumps(results, indent=2)
+    return compact_json(results)
 
 @mcp.tool()
 def read_sheet(sheet_name: str, sheet_id: Optional[str] = None) -> str:
     """Read all entries/rows from a specific spreadsheet sheet."""
     logger.info(f"Tool read_sheet called with sheet_name={sheet_name}, sheet_id={sheet_id}")
     results = sheets.read_sheet(sheet_name, sheet_id=sheet_id)
-    return json.dumps(results, indent=2)
+    return compact_json(results)
 
 @mcp.tool()
 def update_sheet(row: int, column: str, value: str, sheet_name: str = "Master Recruitment Tracker 2026", sheet_id: Optional[str] = None) -> str:
