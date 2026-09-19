@@ -1366,6 +1366,16 @@ export default function DashboardPage() {
                 ))}
               </select>
             </div>
+
+            {/* TOP HEADER SIGN OUT BUTTON (ALWAYS ACCESSIBLE IN PWA & MOBILE) */}
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-[11px] font-bold transition-all bg-white border-slate-200 hover:border-red-300 hover:bg-red-50 text-slate-700 hover:text-red-600 shadow-xs shrink-0 cursor-pointer"
+              title="Sign Out of HR Workspace"
+            >
+              <LogOut className="w-3.5 h-3.5 text-slate-500" />
+              <span className="hidden sm:inline">Sign Out</span>
+            </button>
           </div>
         </div>
 
