@@ -135,14 +135,26 @@ class GoogleSheetsHelper:
                 logger.warning(f"Could not parse GOOGLE_SERVICE_ACCOUNT_JSON: {e}")
 
         creds_p = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON_PATH", "credentials.json")
-        if not os.path.isabs(creds_p):
-            for prefix in [".", "..", "../..", "../../.."]:
-                p = os.path.abspath(os.path.join(prefix, creds_p))
-                if os.path.exists(p):
-                    creds_p = p
+        resolved_creds = None
+        search_dirs = [
+            os.getcwd(),
+            os.path.dirname(os.path.abspath(__file__)),
+            os.path.abspath(".."),
+            os.path.abspath("../.."),
+            os.path.abspath("../../..")
+        ]
+        for d in search_dirs:
+            candidate = os.path.join(d, "credentials.json")
+            if os.path.exists(candidate):
+                resolved_creds = candidate
+                break
+            if not os.path.isabs(creds_p):
+                cand_env = os.path.join(d, creds_p)
+                if os.path.exists(cand_env):
+                    resolved_creds = cand_env
                     break
-                    
-        self.creds_path = creds_p
+
+        self.creds_path = resolved_creds or creds_p
         self.is_mock = self.sheet_id == "mock-sheet-id" or (not self.creds_dict and not os.path.exists(self.creds_path))
         
         if self.is_mock:
@@ -164,7 +176,7 @@ class GoogleSheetsHelper:
                     self.creds = service_account.Credentials.from_service_account_info(self.creds_dict, scopes=scopes)
                 else:
                     self.creds = service_account.Credentials.from_service_account_file(self.creds_path, scopes=scopes)
-                self.service = build('sheets', 'v4', credentials=self.creds)
+                self.service = build('sheets', 'v4', credentials=self.creds, cache_discovery=False)
             except Exception as e:
                 logger.error(f"Failed to connect to Google Sheets API: {e}. Falling back to mock engine.")
                 self.is_mock = True
@@ -306,6 +318,38 @@ class GoogleSheetsHelper:
             if time.time() - cached_time < _CACHE_TTL:
                 return cached_data
         
+        # Handle "All Tabs" multi-sheet aggregation
+        if sheet_name in ["All Tabs", "All", "all"]:
+            tabs = [t for t in self.get_sheet_tabs(sheet_id=active_sheet_id) if t not in ["All Tabs", "All", "all"]]
+            combined = []
+            if not self.is_mock and hasattr(self, 'service'):
+                try:
+                    ranges = [f"'{t}'!A:ZZ" for t in tabs]
+                    res = self.service.spreadsheets().values().batchGet(
+                        spreadsheetId=active_sheet_id, ranges=ranges
+                    ).execute()
+                    for vr in res.get('valueRanges', []):
+                        sub_rows = vr.get('values', [])
+                        if sub_rows:
+                            processed = self._process_rows(sub_rows)
+                            if processed:
+                                combined.extend(processed)
+                except Exception as e:
+                    logger.warning(f"batchGet failed for All Tabs: {e}")
+            
+            if not combined:
+                for t in tabs:
+                    try:
+                        t_data = self.read_sheet(t, sheet_id=active_sheet_id, force_refresh=force_refresh)
+                        if t_data and isinstance(t_data, list):
+                            combined.extend(t_data)
+                    except Exception as e:
+                        logger.warning(f"Fallback fetch failed for tab '{t}': {e}")
+
+            if combined:
+                _in_memory_cache[cache_key] = (time.time(), combined)
+                return combined
+
         # 1. Try Google Sheets API if service is available
         if not self.is_mock and hasattr(self, 'service'):
             try:
@@ -389,41 +433,46 @@ class GoogleSheetsHelper:
 
     def get_sheet_tabs(self, sheet_id: Optional[str] = None) -> List[str]:
         active_sheet_id = sheet_id or self.sheet_id
+        base_tabs = []
         if not active_sheet_id or active_sheet_id == "mock-sheet-id":
-            return ["Master Recruitment Tracker 2026", "Shortlisting Tracker 2026", "Job Opening Tracker 2026"]
-            
-        # Try Google Sheets API first if available
-        if hasattr(self, 'service') and not self.is_mock:
+            base_tabs = ["Master Recruitment Tracker 2026", "Shortlisting Tracker 2026", "Job Opening Tracker 2026"]
+        elif hasattr(self, 'service') and not self.is_mock:
             try:
                 meta = self.service.spreadsheets().get(spreadsheetId=active_sheet_id).execute()
                 sheets_meta = meta.get('sheets', [])
-                tabs = [s['properties']['title'] for s in sheets_meta if 'properties' in s and 'title' in s['properties']]
-                if tabs:
-                    return tabs
+                extracted = [s['properties']['title'] for s in sheets_meta if 'properties' in s and 'title' in s['properties']]
+                if extracted:
+                    base_tabs = extracted
             except Exception as e:
                 logger.warning(f"Sheets API tab list failed: {e}")
 
-        # Fallback to HTML view scraping for public Google Sheets
-        try:
-            import urllib.request
-            import re
-            url = f"https://docs.google.com/spreadsheets/d/{active_sheet_id}/htmlview"
-            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
-            with urllib.request.urlopen(req, timeout=5) as response:
-                html = response.read().decode('utf-8')
-                sheet_names = re.findall(r'name[:=]\s*"([^"]+)"', html)
-                cleaned = []
-                ignored = ['google', 'viewport', 'referrer', 'reports']
-                for s in sheet_names:
-                    s_clean = s.strip()
-                    if s_clean and s_clean.lower() not in ignored and s_clean not in cleaned:
-                        cleaned.append(s_clean)
-                if cleaned:
-                    return cleaned
-        except Exception as e:
-            logger.warning(f"HTML view tab extraction failed: {e}")
+        if not base_tabs:
+            # Fallback to HTML view scraping for public Google Sheets
+            try:
+                import urllib.request
+                import re
+                url = f"https://docs.google.com/spreadsheets/d/{active_sheet_id}/htmlview"
+                req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+                with urllib.request.urlopen(req, timeout=5) as response:
+                    html = response.read().decode('utf-8')
+                    sheet_names = re.findall(r'name[:=]\s*"([^"]+)"', html)
+                    cleaned = []
+                    ignored = ['google', 'viewport', 'referrer', 'reports']
+                    for s in sheet_names:
+                        s_clean = s.strip()
+                        if s_clean and s_clean.lower() not in ignored and s_clean not in cleaned:
+                            cleaned.append(s_clean)
+                    if cleaned:
+                        base_tabs = cleaned
+            except Exception as e:
+                logger.warning(f"HTML view tab extraction failed: {e}")
 
-        return ["Master Recruitment Tracker 2026", "Shortlisting Tracker 2026", "Job Opening Tracker 2026"]
+        if not base_tabs:
+            base_tabs = ["Master Recruitment Tracker 2026", "Shortlisting Tracker 2026", "Job Opening Tracker 2026"]
+
+        if "All Tabs" not in base_tabs:
+            return ["All Tabs"] + base_tabs
+        return base_tabs
 
     def update_sheet(self, sheet_name: str, row: int, column: str, value: Any, sheet_id: Optional[str] = None) -> bool:
         active_sheet_id = sheet_id or self.sheet_id
