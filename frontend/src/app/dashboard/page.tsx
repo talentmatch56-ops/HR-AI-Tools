@@ -1112,37 +1112,108 @@ export default function DashboardPage() {
     router.push('/')
   }
 
-  const parseDate = (dateStr: string): Date | null => {
-    if (!dateStr) return null;
+  const parseDate = (dateStr: any): Date | null => {
+    if (!dateStr || typeof dateStr !== 'string') return null;
     const cleaned = dateStr.trim();
-    const parts = cleaned.split('-');
+    if (!cleaned) return null;
+
+    const monthMap: Record<string, number> = {
+      jan: 0, january: 0,
+      feb: 1, february: 1,
+      mar: 2, march: 2,
+      apr: 3, april: 3,
+      may: 4,
+      jun: 5, june: 5,
+      jul: 6, july: 6,
+      aug: 7, august: 7,
+      sep: 8, sept: 8, september: 8,
+      oct: 9, october: 9,
+      nov: 10, november: 10,
+      dec: 11, december: 11
+    };
+
+    const lowerCleaned = cleaned.toLowerCase();
+    if (monthMap[lowerCleaned] !== undefined) {
+      return new Date(2026, monthMap[lowerCleaned], 1);
+    }
+
+    const normalized = cleaned.replace(/[\/\.\s]+/g, '-');
+    const parts = normalized.split('-');
+
     if (parts.length === 3) {
-      const day = parseInt(parts[0]);
-      const year = parseInt(parts[2]);
-      const monthStr = parts[1].toLowerCase();
-      const months: Record<string, number> = {
-        jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11
-      };
-      let month = months[monthStr.substring(0, 3)];
+      let p0 = parseInt(parts[0]);
+      let p1 = parts[1].toLowerCase();
+      let p2 = parseInt(parts[2]);
+
+      let month = monthMap[p1.substring(0, 3)];
       if (month === undefined) {
         month = parseInt(parts[1]) - 1;
       }
-      if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
-        return new Date(year, month, day);
+
+      if (p0 > 1000) {
+        const year = p0;
+        const day = p2;
+        if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+          return new Date(year, month, day);
+        }
+      } else {
+        const day = p0;
+        let year = p2;
+        if (year < 100) year += 2000;
+        if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+          return new Date(year, month, day);
+        }
+      }
+    } else if (parts.length === 2) {
+      const mVal = parts[0].toLowerCase();
+      let month = monthMap[mVal.substring(0, 3)];
+      if (month === undefined) month = parseInt(parts[0]) - 1;
+      let year = parseInt(parts[1]);
+      if (year < 100) year += 2000;
+      if (!isNaN(month) && !isNaN(year)) {
+        return new Date(year, month, 1);
+      }
+    }
+
+    const fallback = new Date(dateStr);
+    if (!isNaN(fallback.getTime())) return fallback;
+
+    return null;
+  };
+
+  const getCandidateDate = (emp: any): Date | null => {
+    if (!emp) return null;
+    const dateCandidates = [
+      emp.joining_date,
+      emp.date,
+      emp['Date'],
+      emp['1st Round Interview Date'],
+      emp['interview_date_1st'],
+      emp['2nd Round Interview Date'],
+      emp['interview_date_2nd'],
+      emp['offered_joining_date'],
+      emp['Joining Date'],
+      emp['Month'],
+      emp.month
+    ];
+    for (const dStr of dateCandidates) {
+      if (dStr) {
+        const parsed = parseDate(String(dStr));
+        if (parsed) return parsed;
       }
     }
     return null;
   };
 
   const candidateDates = employees
-    .map(emp => parseDate(emp.joining_date))
+    .map(emp => getCandidateDate(emp))
     .filter((d): d is Date => d !== null);
   const maxDate = candidateDates.length > 0 ? new Date(Math.max(...candidateDates.map(d => d.getTime()))) : new Date();
 
   const filteredEmployees = employees.filter(emp => {
     if (selectedCustomDate) {
-      const empDate = parseDate(emp.joining_date);
-      if (!empDate) return false;
+      const empDate = getCandidateDate(emp);
+      if (!empDate) return true;
       const filterDate = new Date(selectedCustomDate);
       return (
         empDate.getDate() === filterDate.getDate() &&
@@ -1151,8 +1222,8 @@ export default function DashboardPage() {
       );
     }
     if (dateFilter === 'all') return true;
-    const empDate = parseDate(emp.joining_date);
-    if (!empDate) return false;
+    const empDate = getCandidateDate(emp);
+    if (!empDate) return true;
     
     const diffTime = Math.abs(maxDate.getTime() - empDate.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -1162,7 +1233,7 @@ export default function DashboardPage() {
     } else if (dateFilter === 'week') {
       return diffDays <= 7;
     } else if (dateFilter === 'month') {
-      return diffDays <= 30;
+      return diffDays <= 90;
     }
     return true;
   });
@@ -2296,33 +2367,7 @@ export default function DashboardPage() {
 
         {/* TAB 4: SVG DASHBOARD ANALYTICS */}
         {activeTab === 'analytics' && (() => {
-          const filteredEmployeesAnalytics = employees.filter(emp => {
-            if (selectedCustomDate) {
-              const empDate = parseDate(emp.joining_date);
-              if (!empDate) return false;
-              const filterDate = new Date(selectedCustomDate);
-              return (
-                empDate.getDate() === filterDate.getDate() &&
-                empDate.getMonth() === filterDate.getMonth() &&
-                empDate.getFullYear() === filterDate.getFullYear()
-              );
-            }
-            if (dateFilter === 'all') return true;
-            const empDate = parseDate(emp.joining_date);
-            if (!empDate) return false;
-            
-            const diffTime = Math.abs(maxDate.getTime() - empDate.getTime());
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            
-            if (dateFilter === 'day') {
-              return diffDays <= 1;
-            } else if (dateFilter === 'week') {
-              return diffDays <= 7;
-            } else if (dateFilter === 'month') {
-              return diffDays <= 30;
-            }
-            return true;
-          });
+          const filteredEmployeesAnalytics = filteredEmployees;
 
           const techStats = filteredEmployeesAnalytics.reduce((acc, emp) => {
             const tech = emp.designation || 'Other';
