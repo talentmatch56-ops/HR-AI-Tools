@@ -255,6 +255,14 @@ const cleanString = (str: string | null | undefined): string => {
     .replace(/âš¡/g, '⚡')
     .replace(/âœ“/g, '✓')
     .replace(/â/g, '') // remove trailing raw 'â' characters from mangled encoding
+const getApiUrl = () => {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL.replace(/\/+$/, '')
+  }
+  if (typeof window !== 'undefined' && !window.location.hostname.includes('localhost')) {
+    return 'https://hr-ai-tools.onrender.com'
+  }
+  return 'http://localhost:8000'
 }
 
 export default function DashboardPage() {
@@ -352,7 +360,7 @@ export default function DashboardPage() {
 
   const fetchEmployees = async (jwtToken: string, query = '', sheetId = '', tabName = '') => {
     try {
-      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '')
+      const apiUrl = getApiUrl()
       let url = `${apiUrl}/employees?token=${jwtToken}`
       if (query) url += `&query=${encodeURIComponent(query)}`
       if (sheetId) url += `&sheet_id=${encodeURIComponent(sheetId)}`
@@ -372,7 +380,7 @@ export default function DashboardPage() {
   const fetchSheetTabs = async (jwtToken: string, sheetId: string) => {
     if (!sheetId) return
     try {
-      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '')
+      const apiUrl = getApiUrl()
       const res = await fetch(`${apiUrl}/sheets/tabs?token=${jwtToken}&sheet_id=${encodeURIComponent(sheetId)}`)
       if (res.ok) {
         const tabs = await res.json()
@@ -390,7 +398,7 @@ export default function DashboardPage() {
 
   const fetchRegisteredSheets = async (jwtToken: string) => {
     try {
-      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '')
+      const apiUrl = getApiUrl()
       const res = await fetch(`${apiUrl}/sheets?token=${jwtToken}`)
       if (res.ok) {
         const data = await res.json()
@@ -403,7 +411,7 @@ export default function DashboardPage() {
 
   const fetchAuditLogs = async (jwtToken: string) => {
     try {
-      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '')
+      const apiUrl = getApiUrl()
       const res = await fetch(`${apiUrl}/audit/logs?token=${jwtToken}`)
       if (res.ok) {
         const data = await res.json()
@@ -484,7 +492,7 @@ export default function DashboardPage() {
     setSyncing(true)
     try {
       // force_refresh=true bypasses backend cache â€” always fetches live from Google Sheets
-      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '')
+      const apiUrl = getApiUrl()
       let url = `${apiUrl}/employees?token=${token}&force_refresh=true`
       if (searchQuery) url += `&query=${encodeURIComponent(searchQuery)}`
       if (activeSheetId) url += `&sheet_id=${encodeURIComponent(activeSheetId)}`
@@ -508,7 +516,7 @@ export default function DashboardPage() {
     setRegisteringSheet(true)
     setRegisterSheetStatus('Verifying and registering sheet ID...')
     try {
-      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '')
+      const apiUrl = getApiUrl()
       const res = await fetch(`${apiUrl}/sheets/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -549,7 +557,7 @@ export default function DashboardPage() {
     setLoading(true)
 
     try {
-      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '')
+      const apiUrl = getApiUrl()
       const historyPayload = updatedMessages.slice(1, -1).map(m => ({
         role: m.role,
         content: m.content
@@ -561,7 +569,8 @@ export default function DashboardPage() {
         body: JSON.stringify({
           message: textToSend,
           history: historyPayload,
-          token
+          token,
+          sheet_id: activeSheetId || '1Eb-hdgR2K9Es3y-INU8YmE5yFGg0I56psxaLYLuILCQ'
         })
       })
 
@@ -601,7 +610,7 @@ export default function DashboardPage() {
     if (!emailCandidate || !candidateEmailPrompt.trim()) return
     setGeneratingCandidateEmail(true)
     try {
-      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '')
+      const apiUrl = getApiUrl()
       const res = await fetch(`${apiUrl}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -711,7 +720,7 @@ export default function DashboardPage() {
     setAutoResponseDraft(null)
 
     try {
-      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '')
+      const apiUrl = getApiUrl()
       const res = await fetch(`${apiUrl}/auto-respond`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -736,7 +745,7 @@ export default function DashboardPage() {
     setSendingEmail(true)
     setEmailSuccess('')
     try {
-      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '')
+      const apiUrl = getApiUrl()
       const res = await fetch(`${apiUrl}/mcp/execute`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -772,7 +781,7 @@ export default function DashboardPage() {
 
   const handleUpdateStatus = async (empId: string, newStatus: string) => {
     try {
-      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '')
+      const apiUrl = getApiUrl()
       const res = await fetch(`${apiUrl}/mcp/execute`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -801,7 +810,7 @@ export default function DashboardPage() {
     setUploadStatus('Uploading...')
 
     try {
-      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '')
+      const apiUrl = getApiUrl()
       const res = await fetch(`${apiUrl}/policies/upload`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

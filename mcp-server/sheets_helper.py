@@ -112,7 +112,9 @@ class GoogleSheetsHelper:
                 load_dotenv(env_p)
                 break
 
-        self.sheet_id = os.getenv("GOOGLE_SHEET_ID", "mock-sheet-id")
+        self.sheet_id = os.getenv("GOOGLE_SHEET_ID", "1Eb-hdgR2K9Es3y-INU8YmE5yFGg0I56psxaLYLuILCQ")
+        if self.sheet_id == "mock-sheet-id":
+            self.sheet_id = "1Eb-hdgR2K9Es3y-INU8YmE5yFGg0I56psxaLYLuILCQ"
         
         # Check if raw JSON credentials provided via environment variable (ideal for Vercel/Cloud)
         raw_json_creds = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")

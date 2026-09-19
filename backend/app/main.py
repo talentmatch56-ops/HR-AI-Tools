@@ -66,6 +66,7 @@ class ChatRequest(BaseModel):
     message: str
     history: List[Dict[str, str]] = []
     token: str
+    sheet_id: Optional[str] = None
 
 class ToolExecutionRequest(BaseModel):
     tool: str
@@ -173,7 +174,8 @@ async def chat(req: ChatRequest):
         message=req.message,
         history=req.history,
         user_role=user["role"],
-        user_email=user["sub"]
+        user_email=user["sub"],
+        sheet_id=req.sheet_id
     )
     return response
 

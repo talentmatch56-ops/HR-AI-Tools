@@ -28,7 +28,7 @@ export default function LoginPage() {
 
     // Try backend authentication with a short timeout
     try {
-      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/+$/, '')
+      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' && !window.location.hostname.includes('localhost') ? 'https://hr-ai-tools.onrender.com' : 'http://localhost:8000')).replace(/\/+$/, '')
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 1200)
       

@@ -51,11 +51,11 @@ class AgentService:
         finally:
             db.close()
 
-    async def handle_message(self, message: str, history: List[Dict[str, str]], user_role: str, user_email: str) -> Dict[str, Any]:
+    async def handle_message(self, message: str, history: List[Dict[str, str]], user_role: str, user_email: str, sheet_id: Optional[str] = None) -> Dict[str, Any]:
         """Orchestrate conversation history, tool calls, and final response."""
         # 1. If we are running in Mock/Demo mode, use rule-based simulation
         if self.is_mock:
-            return await self._simulate_agent_response(message, user_role, user_email)
+            return await self._simulate_agent_response(message, user_role, user_email, sheet_id=sheet_id)
 
         # Parse report helper details upfront
         msg_lower = message.lower()
@@ -244,7 +244,7 @@ class AgentService:
                 "steps": []
             }
 
-    async def _simulate_agent_response(self, message: str, role: str, email: str) -> Dict[str, Any]:
+    async def _simulate_agent_response(self, message: str, role: str, email: str, sheet_id: Optional[str] = None) -> Dict[str, Any]:
         """Simulate LLM tool choices and logical flow for offline demonstration."""
         msg_lower = message.lower()
         words = msg_lower.split()
@@ -457,6 +457,8 @@ class AgentService:
 
         if target_name:
             args = {"name": target_name}
+            if sheet_id:
+                args["sheet_id"] = sheet_id
             res = await mcp_client.execute_tool("search_employee", args)
             log_audit(email, "search_employee", args, res)
             steps.append({"tool": "search_employee", "arguments": args, "status": "success", "response": res})

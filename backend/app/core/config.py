@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_ID: str = "mock-client-id"
     GOOGLE_CLIENT_SECRET: str = "mock-client-secret"
     GOOGLE_REDIRECT_URI: str = "http://localhost:8000/auth/callback"
-    GOOGLE_SHEET_ID: str = "mock-sheet-id"
+    GOOGLE_SHEET_ID: str = "1Eb-hdgR2K9Es3y-INU8YmE5yFGg0I56psxaLYLuILCQ"
     GOOGLE_SERVICE_ACCOUNT_JSON_PATH: str = "credentials.json"
     GMAIL_SENDER_EMAIL: str = "hr@company.com"
     GMAIL_APP_PASSWORD: str = "mock-app-password"
