@@ -274,7 +274,7 @@ export default function DashboardPage() {
   const [theme, setTheme] = useState<'dark' | 'light'>('light')
   const [dateFilter, setDateFilter] = useState<'day' | 'week' | 'month' | 'all'>('all')
   const [selectedCustomDate, setSelectedCustomDate] = useState<string>('')
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
   const [syncing, setSyncing] = useState(false)
   const [lastSynced, setLastSynced] = useState<string | null>(null)
@@ -511,7 +511,22 @@ export default function DashboardPage() {
       fetchEmployees(storedToken, '', currentSheetId)
     }, 15000)
 
-    return () => clearInterval(interval)
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768
+      setIsMobile(mobile)
+      if (mobile) {
+        setSidebarOpen(false)
+      } else {
+        setSidebarOpen(true)
+      }
+    }
+    handleResize()
+    window.addEventListener('resize', handleResize)
+
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('resize', handleResize)
+    }
   }, [])
 
   useEffect(() => {
@@ -1251,7 +1266,7 @@ export default function DashboardPage() {
 
   return (
     <div className={`flex-1 flex flex-col md:flex-row h-screen overflow-hidden font-sans transition-colors duration-300 ${
-      isDark ? 'bg-[#090d22] text-slate-100' : 'bg-slate-55 text-slate-800'
+      isDark ? 'bg-[#090d22] text-slate-100' : 'bg-slate-50 text-slate-800'
     }`} style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
       
       {/* MOBILE BACKDROP OVERLAY */}
@@ -1269,9 +1284,9 @@ export default function DashboardPage() {
               sidebarOpen ? 'translate-x-0' : '-translate-x-full'
             }`
           : `transition-all duration-300 shrink-0 ${
-              sidebarOpen ? 'w-64 border-r' : 'w-0 border-r-0'
+              sidebarOpen ? 'w-64 border-r' : 'w-0 border-r-0 overflow-hidden'
             }`
-      } flex flex-col justify-between overflow-hidden ${
+      } flex flex-col justify-between ${
         isDark ? 'border-blue-900/50 bg-[#070a1a]' : 'border-slate-200 bg-white shadow-sm'
       } ${
         (!isMobile && sidebarOpen) || isMobile ? 'p-6' : 'p-0'
@@ -1287,7 +1302,6 @@ export default function DashboardPage() {
                 <span style={{ fontFamily: "'Playfair Display', serif", fontStyle: 'italic', fontWeight: 400, color: '#3b82f6', fontSize: '1.05em' }}>Workspace</span>
               </span>
             </div>
-
           </div>
 
           {/* DYNAMIC SHEET SELECTOR */}
@@ -1303,8 +1317,8 @@ export default function DashboardPage() {
               }}
               className={`w-full text-xs font-semibold py-1.5 px-2 rounded-lg border focus:outline-none focus:ring-1 ${
                 isDark 
-                  ? 'bg-blue-955/40 border-blue-900 text-white focus:border-blue-505' 
-                  : 'bg-white border-slate-202 text-slate-805 focus:border-blue-400 shadow-sm'
+                  ? 'bg-blue-950/40 border-blue-900 text-white focus:border-blue-500' 
+                  : 'bg-white border-slate-200 text-slate-800 focus:border-blue-400 shadow-sm'
               }`}
             >
               <option value="">Default Tracker (Sheet)</option>
@@ -1323,7 +1337,7 @@ export default function DashboardPage() {
                   }}
                   className={`w-full text-xs font-semibold py-1.5 px-2 rounded-lg border focus:outline-none focus:ring-1 ${
                     isDark 
-                      ? 'bg-blue-955/40 border-blue-900 text-white focus:border-blue-505' 
+                      ? 'bg-blue-950/40 border-blue-900 text-white focus:border-blue-500' 
                       : 'bg-white border-slate-200 text-slate-800 focus:border-blue-400 shadow-sm'
                   }`}
                 >
@@ -1337,7 +1351,7 @@ export default function DashboardPage() {
           {/* ACTIVE USER DETAILS */}
           {user && (
             <div className={`p-3 rounded-xl border mb-6 flex flex-col gap-2 ${
-              isDark ? 'border-blue-900/40 bg-blue-955/25' : 'border-slate-200 bg-slate-55'
+              isDark ? 'border-blue-900/40 bg-blue-950/25' : 'border-slate-200 bg-slate-50'
             }`}>
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-xs text-white shadow-sm">
@@ -1346,7 +1360,7 @@ export default function DashboardPage() {
                 <div className="min-w-0">
                   <h3 className={`text-[11px] font-semibold truncate max-w-[130px] ${isDark ? 'text-white' : 'text-slate-900'}`}>{user.email}</h3>
                   <div className="flex items-center gap-1 mt-0.5">
-                    <Shield className="w-2.5 h-2.5 text-blue-450" />
+                    <Shield className="w-2.5 h-2.5 text-blue-400" />
                     <span className="text-[9px] text-blue-400 font-bold uppercase">{user.role}</span>
                   </div>
                 </div>
@@ -1372,7 +1386,7 @@ export default function DashboardPage() {
                   ? 'bg-blue-600 border-blue-500 text-white shadow-md shadow-blue-600/15'
                   : isDark 
                     ? 'bg-blue-950/20 border-blue-900/40 text-slate-400 hover:text-white hover:border-blue-800' 
-                    : 'bg-slate-50 border-slate-200 text-slate-655 hover:text-slate-955 hover:bg-slate-100'
+                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
               <Layout className="w-4 h-4 mb-1" />
@@ -1385,8 +1399,8 @@ export default function DashboardPage() {
                 activeTab === 'chat'
                   ? 'bg-blue-600 border-blue-500 text-white shadow-md shadow-blue-600/15'
                   : isDark 
-                    ? 'bg-blue-955/20 border-blue-900/40 text-slate-400 hover:text-white hover:border-blue-800' 
-                    : 'bg-slate-50 border-slate-200 text-slate-655 hover:text-slate-955 hover:bg-slate-100'
+                    ? 'bg-blue-950/20 border-blue-900/40 text-slate-400 hover:text-white hover:border-blue-800' 
+                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
               <Sparkles className="w-4 h-4 mb-1" />
@@ -1399,8 +1413,8 @@ export default function DashboardPage() {
                 activeTab === 'kanban'
                   ? 'bg-blue-600 border-blue-500 text-white shadow-md shadow-blue-600/15'
                   : isDark 
-                    ? 'bg-blue-955/20 border-blue-900/40 text-slate-400 hover:text-white hover:border-blue-800' 
-                    : 'bg-slate-50 border-slate-200 text-slate-655 hover:text-slate-955 hover:bg-slate-105'
+                    ? 'bg-blue-950/20 border-blue-900/40 text-slate-400 hover:text-white hover:border-blue-800' 
+                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
               <Layout className="w-4 h-4 mb-1" />
@@ -1413,8 +1427,8 @@ export default function DashboardPage() {
                 activeTab === 'table'
                   ? 'bg-blue-600 border-blue-500 text-white shadow-md shadow-blue-600/15'
                   : isDark 
-                    ? 'bg-blue-955/20 border-blue-900/40 text-slate-400 hover:text-white hover:border-blue-800' 
-                    : 'bg-slate-50 border-slate-200 text-slate-655 hover:text-slate-955 hover:bg-slate-105'
+                    ? 'bg-blue-950/20 border-blue-900/40 text-slate-400 hover:text-white hover:border-blue-800' 
+                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
               <FileText className="w-4 h-4 mb-1" />
@@ -1427,8 +1441,8 @@ export default function DashboardPage() {
                 activeTab === 'analytics'
                   ? 'bg-blue-600 border-blue-500 text-white shadow-md shadow-blue-600/15'
                   : isDark 
-                    ? 'bg-blue-955/20 border-blue-900/40 text-slate-400 hover:text-white hover:border-blue-800' 
-                    : 'bg-slate-50 border-slate-200 text-slate-655 hover:text-slate-955 hover:bg-slate-105'
+                    ? 'bg-blue-950/20 border-blue-900/40 text-slate-400 hover:text-white hover:border-blue-800' 
+                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
               <BarChart3 className="w-4 h-4 mb-1" />
@@ -1441,8 +1455,8 @@ export default function DashboardPage() {
                 activeTab === 'directory'
                   ? 'bg-blue-600 border-blue-500 text-white shadow-md shadow-blue-600/15'
                   : isDark 
-                    ? 'bg-blue-955/20 border-blue-900/40 text-slate-400 hover:text-white hover:border-blue-800' 
-                    : 'bg-slate-50 border-slate-200 text-slate-655 hover:text-slate-955 hover:bg-slate-105'
+                    ? 'bg-blue-950/20 border-blue-900/40 text-slate-400 hover:text-white hover:border-blue-800' 
+                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
               <User className="w-4 h-4 mb-1" />
@@ -1455,8 +1469,8 @@ export default function DashboardPage() {
                 activeTab === 'mail_merge'
                   ? 'bg-blue-600 border-blue-500 text-white shadow-md shadow-blue-600/15'
                   : isDark 
-                    ? 'bg-blue-955/20 border-blue-900/40 text-slate-400 hover:text-white hover:border-blue-800' 
-                    : 'bg-slate-50 border-slate-200 text-slate-655 hover:text-slate-955 hover:bg-slate-105'
+                    ? 'bg-blue-950/20 border-blue-900/40 text-slate-400 hover:text-white hover:border-blue-800' 
+                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
               <Mail className="w-4 h-4 mb-1" />
@@ -1469,8 +1483,8 @@ export default function DashboardPage() {
           onClick={handleLogout}
           className={`w-full py-2 border rounded-lg flex items-center justify-center gap-2 text-xs font-bold transition-all ${
             isDark 
-              ? 'border-blue-900/40 hover:border-red-500/30 hover:bg-red-500/5 text-slate-400 hover:text-red-405' 
-              : 'border-slate-200 hover:border-red-500/30 hover:bg-red-500/5 text-slate-650 hover:text-red-655'
+              ? 'border-blue-900/40 hover:border-red-500/30 hover:bg-red-500/5 text-slate-400 hover:text-red-400' 
+              : 'border-slate-200 hover:border-red-500/30 hover:bg-red-500/5 text-slate-600 hover:text-red-600'
           }`}
         >
           <LogOut className="w-3.5 h-3.5" /> Sign Out
