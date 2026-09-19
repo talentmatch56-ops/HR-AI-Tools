@@ -261,6 +261,11 @@ const getApiUrl = () => {
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL.replace(/\/+$/, '')
   }
+  if (typeof window !== 'undefined') {
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      return 'http://localhost:8000'
+    }
+  }
   return 'https://hr-ai-tools.onrender.com'
 }
 
@@ -602,26 +607,53 @@ export default function DashboardPage() {
     setMessages(updatedMessages)
     setLoading(true)
 
+    const historyPayload = updatedMessages.slice(1, -1).map(m => ({
+      role: m.role,
+      content: m.content
+    }))
+
+    const payload = {
+      message: textToSend,
+      history: historyPayload,
+      token,
+      sheet_id: activeSheetId || '1Eb-hdgR2K9Es3y-INU8YmE5yFGg0I56psxaLYLuILCQ'
+    }
+
+    const tryFetch = async (retries = 2): Promise<any> => {
+      const primaryUrl = getApiUrl()
+      const urlsToTry = [
+        `${primaryUrl}/chat`,
+        primaryUrl.includes('localhost') ? 'https://hr-ai-tools.onrender.com/chat' : 'http://localhost:8000/chat'
+      ]
+
+      for (let attempt = 0; attempt <= retries; attempt++) {
+        for (const url of urlsToTry) {
+          try {
+            const controller = new AbortController()
+            const timeoutId = setTimeout(() => controller.abort(), 25000)
+            const res = await fetch(url, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+              signal: controller.signal
+            })
+            clearTimeout(timeoutId)
+            if (res.ok) {
+              return await res.json()
+            }
+          } catch (err) {
+            console.warn(`Attempt ${attempt + 1} to ${url} failed:`, err)
+          }
+        }
+        if (attempt < retries) {
+          await new Promise(r => setTimeout(r, 1500))
+        }
+      }
+      throw new Error('All connection attempts failed.')
+    }
+
     try {
-      const apiUrl = getApiUrl()
-      const historyPayload = updatedMessages.slice(1, -1).map(m => ({
-        role: m.role,
-        content: m.content
-      }))
-
-      const res = await fetch(`${apiUrl}/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: textToSend,
-          history: historyPayload,
-          token,
-          sheet_id: activeSheetId || '1Eb-hdgR2K9Es3y-INU8YmE5yFGg0I56psxaLYLuILCQ'
-        })
-      })
-
-      if (!res.ok) throw new Error('Failed to fetch response')
-      const data = await res.json()
+      const data = await tryFetch(2)
 
       setMessages(prev => [
         ...prev,
@@ -643,7 +675,8 @@ export default function DashboardPage() {
         ...prev,
         {
           role: 'assistant',
-          content: 'Sorry, I failed to process that request due to server disconnect.'
+          content: 'The backend server is waking up or reconnecting. Please retry your message shortly.',
+          steps: []
         }
       ])
     } finally {
