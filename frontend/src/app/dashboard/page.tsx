@@ -275,7 +275,8 @@ export default function DashboardPage() {
   const [user, setUser] = useState<{ email: string; role: string } | null>(null)
   const [token, setToken] = useState<string>('')
   const [input, setInput] = useState('')
-  const [activeTab, setActiveTab] = useState<'home' | 'chat' | 'kanban' | 'analytics' | 'admin' | 'table' | 'directory' | 'mail_merge'>('home')
+  const [activeTab, setActiveTab] = useState<'home' | 'chat' | 'kanban' | 'analytics' | 'admin' | 'table' | 'directory' | 'mail_merge' | 'recruitment_dashboard'>('home')
+  const [techFilter, setTechFilter] = useState<string>('ALL')
   const [theme, setTheme] = useState<'dark' | 'light'>('light')
   const [dateFilter, setDateFilter] = useState<'day' | 'week' | 'month' | 'all'>('all')
   const [selectedCustomDate, setSelectedCustomDate] = useState<string>('')
@@ -1281,6 +1282,14 @@ export default function DashboardPage() {
       icon: <Mail className="w-6 h-6 text-teal-400" />,
       color: 'from-teal-500/10 to-teal-600/5 hover:border-teal-500/40 hover:shadow-teal-500/10 border-teal-550/20',
       badge: 'Templates'
+    },
+    {
+      id: 'recruitment_dashboard',
+      title: 'Tech Recruitment Dashboard',
+      description: 'Technology-wise visual sourcing charts, candidate intake volume, and technology conversion matrix (interview, offer, reject, joined).',
+      icon: <BarChart3 className="w-6 h-6 text-blue-500" />,
+      color: 'from-blue-500/10 to-indigo-600/5 hover:border-blue-500/40 hover:shadow-blue-500/10 border-blue-550/20',
+      badge: 'Tech Matrix'
     }
   ]
 
@@ -1508,6 +1517,20 @@ export default function DashboardPage() {
             >
               <Mail className="w-4 h-4 mb-1" />
               <span className="text-[9.5px] font-bold tracking-tight">Mail Merge</span>
+            </button>
+
+            <button
+              onClick={() => { setActiveTab('recruitment_dashboard'); if (isMobile) setSidebarOpen(false); }}
+              className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition-all ${
+                activeTab === 'recruitment_dashboard'
+                  ? 'bg-blue-600 border-blue-500 text-white shadow-md shadow-blue-600/15'
+                  : isDark 
+                    ? 'bg-blue-950/20 border-blue-900/40 text-slate-400 hover:text-white hover:border-blue-800' 
+                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <BarChart3 className="w-4 h-4 mb-1" />
+              <span className="text-[9.5px] font-bold tracking-tight">Tech Dashboard</span>
             </button>
           </nav>
         </div>
@@ -3126,6 +3149,350 @@ export default function DashboardPage() {
             />
           </div>
         )}
+
+        {/* TAB 8: RECRUITMENT TECH DASHBOARD */}
+        {activeTab === 'recruitment_dashboard' && (() => {
+          const getTechName = (emp: Employee): string => {
+            const raw = (emp as any)['Technology (Job Title)'] || (emp as any)['technology'] || emp.designation || 'Other'
+            return raw.trim() || 'Other'
+          }
+
+          const techStatsMap: Record<string, {
+            total: number;
+            toScreen: number;
+            selected: number;
+            interviewed: number;
+            rejected: number;
+            offered: number;
+            joined: number;
+          }> = {}
+
+          filteredEmployees.forEach(emp => {
+            const tech = getTechName(emp)
+            if (!techStatsMap[tech]) {
+              techStatsMap[tech] = { total: 0, toScreen: 0, selected: 0, interviewed: 0, rejected: 0, offered: 0, joined: 0 }
+            }
+            const st = (emp.status || '').toLowerCase()
+            techStatsMap[tech].total += 1
+
+            if (st.includes('join')) {
+              techStatsMap[tech].joined += 1
+            } else if (st.includes('offer')) {
+              techStatsMap[tech].offered += 1
+            } else if (st.includes('reject')) {
+              techStatsMap[tech].rejected += 1
+            } else if (st.includes('interview') || st.includes('round')) {
+              techStatsMap[tech].interviewed += 1
+            } else if (st.includes('screen selected') || st.includes('shortlist') || st.includes('selected')) {
+              techStatsMap[tech].selected += 1
+            } else {
+              techStatsMap[tech].toScreen += 1
+            }
+          })
+
+          const allTechList = Object.keys(techStatsMap).sort((a, b) => techStatsMap[b].total - techStatsMap[a].total)
+          const displayedTechs = techFilter === 'ALL' ? allTechList : allTechList.filter(t => t.toLowerCase() === techFilter.toLowerCase() || t.toLowerCase().includes(techFilter.toLowerCase()))
+
+          const totalCandidates = filteredEmployees.length
+          let totalToScreen = 0
+          let totalSelected = 0
+          let totalInterviewed = 0
+          let totalRejected = 0
+          let totalOffered = 0
+          let totalJoined = 0
+
+          Object.values(techStatsMap).forEach(s => {
+            totalToScreen += s.toScreen
+            totalSelected += s.selected
+            totalInterviewed += s.interviewed
+            totalRejected += s.rejected
+            totalOffered += s.offered
+            totalJoined += s.joined
+          })
+
+          const overallYield = totalCandidates > 0 ? ((totalJoined / totalCandidates) * 100).toFixed(1) : '0'
+          const maxTechCount = allTechList.length > 0 ? Math.max(...allTechList.map(t => techStatsMap[t].total)) : 1
+
+          return (
+            <div className="w-full space-y-6 font-sans p-1 md:p-2">
+              {/* TOP BANNER & CONTROLS */}
+              <div className="p-5 md:p-6 rounded-2xl bg-white dark:bg-[#0c122b] border border-slate-200 dark:border-blue-900/40 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400">
+                      <BarChart3 className="w-5 h-5" />
+                    </div>
+                    <h2 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                      Technology Recruitment Dashboard
+                    </h2>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">
+                    Technology-wise candidate analytics, status breakdown, visual charts & conversion matrix
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Filter Tech:</label>
+                    <select
+                      value={techFilter}
+                      onChange={(e) => setTechFilter(e.target.value)}
+                      className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-blue-900 bg-slate-50 dark:bg-blue-950/50 text-xs font-bold text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
+                    >
+                      <option value="ALL">All Technologies ({allTechList.length})</option>
+                      {allTechList.map((t) => (
+                        <option key={t} value={t}>{t} ({techStatsMap[t].total})</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <button
+                    onClick={handleSync}
+                    disabled={syncing}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-blue-900 bg-white dark:bg-blue-950/40 hover:bg-slate-50 text-xs font-bold text-slate-700 dark:text-slate-200 shadow-xs transition-all"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin text-blue-500' : ''}`} />
+                    <span>Sync</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* KPI STAT CARDS GRID */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-5">
+                <div className="p-4 md:p-5 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50/50 dark:from-blue-950/40 dark:to-indigo-950/20 border border-blue-200/80 dark:border-blue-900/50 shadow-sm">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400 block mb-1">Total Candidates Sourced</span>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white">{totalCandidates}</span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
+                      {allTechList.length} Tech Stacks
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-4 md:p-5 rounded-2xl bg-gradient-to-br from-purple-50 to-purple-50/50 dark:from-purple-950/40 dark:to-purple-950/20 border border-purple-200/80 dark:border-purple-900/50 shadow-sm">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400 block mb-1">In Interview Stage</span>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white">{totalInterviewed}</span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300">
+                      {totalCandidates > 0 ? Math.round((totalInterviewed / totalCandidates) * 100) : 0}% Active
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-4 md:p-5 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50/50 dark:from-amber-950/40 dark:to-orange-950/20 border border-amber-200/80 dark:border-amber-900/50 shadow-sm">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-600 dark:text-amber-400 block mb-1">Offers Extended</span>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white">{totalOffered}</span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300">
+                      Offered
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-4 md:p-5 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50/50 dark:from-emerald-950/40 dark:to-teal-950/20 border border-emerald-200/80 dark:border-emerald-900/50 shadow-sm">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 block mb-1">Joined & Yield Rate</span>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white">{totalJoined}</span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300">
+                      {overallYield}% Yield
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* VISUAL CHARTS ROW */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                {/* Visual Chart 1: Tech-wise Candidate Volume */}
+                <div className="p-5 md:p-6 rounded-2xl bg-white dark:bg-[#0c122b] border border-slate-200 dark:border-blue-900/40 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-blue-900/40 pb-3">
+                    <div>
+                      <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">Technology Candidate Volume</h3>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">Total profiles sourced per stack</p>
+                    </div>
+                    <span className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-blue-950 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-blue-900">
+                      Top Stacks
+                    </span>
+                  </div>
+
+                  <div className="space-y-3.5 max-h-[320px] overflow-y-auto pr-1">
+                    {allTechList.slice(0, 10).map((t, idx) => {
+                      const count = techStatsMap[t].total
+                      const pct = Math.round((count / maxTechCount) * 100)
+                      const colors = [
+                        'from-blue-500 to-indigo-600',
+                        'from-purple-500 to-pink-600',
+                        'from-emerald-500 to-teal-600',
+                        'from-amber-500 to-orange-600',
+                        'from-cyan-500 to-blue-600',
+                        'from-rose-500 to-red-600',
+                      ]
+                      const barGradient = colors[idx % colors.length]
+
+                      return (
+                        <div key={t} className="space-y-1.5 cursor-pointer group" onClick={() => setTechFilter(t)}>
+                          <div className="flex justify-between items-center text-xs font-semibold">
+                            <span className="text-slate-700 dark:text-slate-200 truncate group-hover:text-blue-600 transition-colors">
+                              {t}
+                            </span>
+                            <span className="text-slate-900 dark:text-white font-extrabold ml-2">
+                              {count} <span className="text-[10px] text-slate-400 font-normal">({totalCandidates > 0 ? Math.round((count / totalCandidates) * 100) : 0}%)</span>
+                            </span>
+                          </div>
+                          <div className="w-full bg-slate-100 dark:bg-blue-950/60 h-3 rounded-full overflow-hidden p-0.5 border border-slate-200/50 dark:border-blue-900/30">
+                            <div
+                              className={`h-full rounded-full bg-gradient-to-r ${barGradient} transition-all duration-700 shadow-xs`}
+                              style={{ width: `${Math.max(pct, 4)}%` }}
+                            />
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Visual Chart 2: Pipeline Conversion Funnel */}
+                <div className="p-5 md:p-6 rounded-2xl bg-white dark:bg-[#0c122b] border border-slate-200 dark:border-blue-900/40 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-blue-900/40 pb-3">
+                    <div>
+                      <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">Recruitment Conversion Funnel</h3>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">Stage progression from sourcing to joining</p>
+                    </div>
+                    <span className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                      Funnel View
+                    </span>
+                  </div>
+
+                  <div className="space-y-3.5 max-h-[320px] overflow-y-auto pr-1">
+                    {[
+                      { label: 'Total Sourced Pool', count: totalCandidates, color: 'from-blue-600 to-indigo-600', icon: '📋' },
+                      { label: 'Screened & Selected', count: totalSelected, color: 'from-cyan-500 to-blue-500', icon: '🎯' },
+                      { label: 'Interviewed (1st / 2nd Round)', count: totalInterviewed, color: 'from-purple-500 to-indigo-500', icon: '👥' },
+                      { label: 'Offers Extended', count: totalOffered, color: 'from-amber-500 to-orange-500', icon: '📄' },
+                      { label: 'Joined Candidates', count: totalJoined, color: 'from-emerald-500 to-teal-500', icon: '🎉' },
+                      { label: 'Rejected Candidates', count: totalRejected, color: 'from-red-500 to-rose-600', icon: '❌' },
+                    ].map((st) => {
+                      const pct = totalCandidates > 0 ? Math.round((st.count / totalCandidates) * 100) : 0
+                      return (
+                        <div key={st.label} className="space-y-1.5">
+                          <div className="flex justify-between items-center text-xs font-semibold">
+                            <span className="text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+                              <span>{st.icon}</span> {st.label}
+                            </span>
+                            <span className="text-slate-900 dark:text-white font-extrabold">
+                              {st.count} <span className="text-[10px] text-slate-400 font-normal">({pct}%)</span>
+                            </span>
+                          </div>
+                          <div className="w-full bg-slate-100 dark:bg-blue-950/60 h-3 rounded-full overflow-hidden p-0.5 border border-slate-200/50 dark:border-blue-900/30">
+                            <div
+                              className={`h-full rounded-full bg-gradient-to-r ${st.color} transition-all duration-700 shadow-xs`}
+                              style={{ width: `${Math.max(pct, 3)}%` }}
+                            />
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* TECHNOLOGY CONVERSION MATRIX TABLE */}
+              <div className="p-5 md:p-6 rounded-2xl bg-white dark:bg-[#0c122b] border border-slate-200 dark:border-blue-900/40 shadow-sm space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-blue-900/40 pb-4">
+                  <div>
+                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Technology-Wide Conversion Matrix</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      Detailed stage breakdown: Sourced, Screened, Interviewed, Rejected, Offered, and Joined rates per technology
+                    </p>
+                  </div>
+                  {techFilter !== 'ALL' && (
+                    <button
+                      onClick={() => setTechFilter('ALL')}
+                      className="px-3 py-1 rounded-xl text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-900 hover:bg-blue-100 transition-colors self-start sm:self-auto"
+                    >
+                      Clear Filter (Show All)
+                    </button>
+                  )}
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse font-sans">
+                    <thead>
+                      <tr className="border-b border-slate-200 dark:border-blue-900/50 bg-slate-50/80 dark:bg-blue-950/40 text-[11px] font-extrabold uppercase text-slate-600 dark:text-slate-300">
+                        <th className="py-3 px-4 rounded-l-xl">Technology Stack</th>
+                        <th className="py-3 px-3 text-center">Total Sourced</th>
+                        <th className="py-3 px-3 text-center text-blue-600 dark:text-blue-400">To Screen</th>
+                        <th className="py-3 px-3 text-center text-cyan-600 dark:text-cyan-400">Selected</th>
+                        <th className="py-3 px-3 text-center text-purple-600 dark:text-purple-400">Interviewed</th>
+                        <th className="py-3 px-3 text-center text-rose-600 dark:text-rose-400">Rejected</th>
+                        <th className="py-3 px-3 text-center text-amber-600 dark:text-amber-400">Offered</th>
+                        <th className="py-3 px-3 text-center text-emerald-600 dark:text-emerald-400">Joined</th>
+                        <th className="py-3 px-4 text-right rounded-r-xl">Yield Rate %</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-blue-900/30 text-xs">
+                      {displayedTechs.map((tech) => {
+                        const s = techStatsMap[tech]
+                        const yieldPct = s.total > 0 ? ((s.joined / s.total) * 100).toFixed(1) : '0'
+
+                        return (
+                          <tr
+                            key={tech}
+                            className="hover:bg-blue-50/40 dark:hover:bg-blue-950/30 transition-colors group"
+                          >
+                            <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                              <span className="group-hover:text-blue-600 transition-colors">{tech}</span>
+                            </td>
+                            <td className="py-3.5 px-3 text-center font-extrabold text-slate-900 dark:text-white">
+                              {s.total}
+                            </td>
+                            <td className="py-3.5 px-3 text-center font-bold text-blue-600 dark:text-blue-400">
+                              {s.toScreen}
+                            </td>
+                            <td className="py-3.5 px-3 text-center font-bold text-cyan-600 dark:text-cyan-400">
+                              {s.selected}
+                            </td>
+                            <td className="py-3.5 px-3 text-center font-bold text-purple-600 dark:text-purple-400">
+                              {s.interviewed}
+                            </td>
+                            <td className="py-3.5 px-3 text-center font-bold text-rose-600 dark:text-rose-400">
+                              {s.rejected}
+                            </td>
+                            <td className="py-3.5 px-3 text-center font-bold text-amber-600 dark:text-amber-400">
+                              {s.offered}
+                            </td>
+                            <td className="py-3.5 px-3 text-center font-bold text-emerald-600 dark:text-emerald-400">
+                              {s.joined}
+                            </td>
+                            <td className="py-3.5 px-4 text-right font-black text-slate-900 dark:text-white">
+                              <span className={`inline-block px-2 py-0.5 rounded-full text-[11px] ${
+                                Number(yieldPct) > 20
+                                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300'
+                                  : Number(yieldPct) > 0
+                                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border border-blue-300'
+                                  : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                              }`}>
+                                {yieldPct}%
+                              </span>
+                            </td>
+                          </tr>
+                        )
+                      })}
+
+                      {displayedTechs.length === 0 && (
+                        <tr>
+                          <td colSpan={9} className="py-8 text-center text-slate-400 font-medium">
+                            No candidates found for the selected technology filter.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )
+        })()}
 
       </div>
 
