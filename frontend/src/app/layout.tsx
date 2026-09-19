@@ -29,15 +29,23 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-                window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js')
-                    .then(function(registration) {
-                      console.log('SW registered:', registration.scope);
-                    })
-                    .catch(function(error) {
-                      console.log('SW registration failed:', error);
-                    });
-                });
+                if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+                  window.addEventListener('load', function() {
+                    navigator.serviceWorker.register('/sw.js')
+                      .then(function(registration) {
+                        console.log('SW registered:', registration.scope);
+                      })
+                      .catch(function(error) {
+                        console.log('SW registration failed:', error);
+                      });
+                  });
+                } else {
+                  navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                    for (let registration of registrations) {
+                      registration.unregister();
+                    }
+                  });
+                }
               }
             `,
           }}
