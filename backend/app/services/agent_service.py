@@ -58,15 +58,20 @@ class AgentService:
             return await self._simulate_agent_response(message, user_role, user_email, sheet_id=sheet_id)
 
         # Parse report helper details upfront
+        import re
         msg_lower = message.lower()
-        is_chart_query = any(k in msg_lower for k in ["chart", "graph", "bar chart", "visualize", "visualization"])
-        is_report_query = is_chart_query or any(k in msg_lower for k in ["how many", "count", "added on", "added in", "report", "added", "list", "show me"])
+        has_date_in_msg = bool(re.search(r"(\d+)(?:st|nd|rd|th)?\s+([a-zA-Z]+|\d+)", msg_lower)) or any(m in msg_lower for m in ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec", "quarter", "quater"])
+        is_chart_query = any(k in msg_lower for k in ["chart", "graph", "bar chart", "visual", "visualize", "visualization", "pie chart", "trend", "breakdown"])
+        is_report_query = is_chart_query or has_date_in_msg or any(k in msg_lower for k in ["how many", "count", "added on", "added in", "report", "added", "list", "show me", "show", "data of", "data for", "details for"])
+        
+        target_day = None
+        target_month = None
+        target_year = None
         target_date_str = None
         target_months = []
         target_tech = None
+
         if is_report_query:
-            import re
-            # Check for quarter query filters
             if "last quarter" in msg_lower or "last quater" in msg_lower or "previous quarter" in msg_lower or "prev quarter" in msg_lower:
                 target_months = ["Apr", "May", "Jun"]
                 target_date_str = "Last Quarter (Q2 2026)"
@@ -76,17 +81,42 @@ class AgentService:
 
             if not target_date_str:
                 months_map = {
-                    "jan": "01", "feb": "02", "mar": "03", "apr": "04", "may": "05", "jun": "06",
-                    "jul": "07", "aug": "08", "sep": "09", "oct": "10", "nov": "11", "dec": "12"
+                    "jan": "Jan", "january": "Jan", "feb": "Feb", "february": "Feb",
+                    "mar": "Mar", "march": "Mar", "apr": "Apr", "april": "Apr",
+                    "may": "May", "jun": "Jun", "june": "Jun", "jul": "Jul", "july": "Jul",
+                    "aug": "Aug", "august": "Aug", "sep": "Sep", "september": "Sep",
+                    "oct": "Oct", "october": "Oct", "nov": "Nov", "november": "Nov",
+                    "dec": "Dec", "december": "Dec"
                 }
-                date_match = re.search(r"(\d+)(?:st|nd|rd|th)?\s+([a-zA-Z]+)\s+(\d{4})", msg_lower)
-                if date_match:
-                    day = date_match.group(1).zfill(2)
-                    month_name = date_match.group(2)[:3]
-                    year = date_match.group(3)
-                    if month_name in months_map:
-                        target_date_str = f"{day}-{month_name.capitalize()}-{year}"
-            
+                m1 = re.search(r"(\d+)(?:st|nd|rd|th)?\s+([a-zA-Z]+)(?:\s+(\d{4}))?", msg_lower)
+                m2 = re.search(r"([a-zA-Z]+)\s+(\d+)(?:st|nd|rd|th)?(?:\s+(\d{4}))?", msg_lower)
+                m3 = re.search(r"(\d{1,2})[-/](\d{1,2}|[a-zA-Z]+)[-/](\d{2,4})", msg_lower)
+
+                if m1 and m1.group(2)[:3].lower() in months_map:
+                    target_day = int(m1.group(1))
+                    target_month = months_map[m1.group(2)[:3].lower()]
+                    target_year = m1.group(3) or "2026"
+                elif m2 and m2.group(1)[:3].lower() in months_map:
+                    target_month = months_map[m2.group(1)[:3].lower()]
+                    target_day = int(m2.group(2))
+                    target_year = m2.group(3) or "2026"
+                elif m3:
+                    target_day = int(m3.group(1))
+                    m_part = m3.group(2)
+                    y = m3.group(3)
+                    if len(y) == 2: y = "20" + y
+                    target_year = y
+                    if m_part.isdigit():
+                        rev_map = {1:"Jan", 2:"Feb", 3:"Mar", 4:"Apr", 5:"May", 6:"Jun", 7:"Jul", 8:"Aug", 9:"Sep", 10:"Oct", 11:"Nov", 12:"Dec"}
+                        target_month = rev_map.get(int(m_part), "Feb")
+                    elif m_part[:3].lower() in months_map:
+                        target_month = months_map[m_part[:3].lower()]
+
+                if target_day and target_month:
+                    target_date_str = f"{str(target_day).zfill(2)}-{target_month}-{target_year or '2026'}"
+                elif target_month:
+                    target_date_str = f"{target_month} {target_year or '2026'}"
+
             tech_match = re.search(r"(?:for|in)\s+([a-zA-Z\s]+?)(?:\s+technology|\s+tech|$)", msg_lower)
             if tech_match:
                 target_tech = tech_match.group(1).strip()
@@ -246,6 +276,7 @@ class AgentService:
 
     async def _simulate_agent_response(self, message: str, role: str, email: str, sheet_id: Optional[str] = None) -> Dict[str, Any]:
         """Simulate LLM tool choices and logical flow for offline demonstration."""
+        import re
         msg_lower = message.lower()
         words = msg_lower.split()
         steps = []
@@ -273,14 +304,18 @@ class AgentService:
             return {"response": response_text, "steps": steps}
 
         # 0.5 Match report query (e.g., count candidates added on a specific date for a specific technology)
-        is_chart_query = any(k in msg_lower for k in ["chart", "graph", "bar chart", "visualize", "visualization"])
-        is_report_query = is_chart_query or any(k in msg_lower for k in ["how many", "count", "added on", "added in", "report", "added", "list", "show me"])
+        has_date_in_msg = bool(re.search(r"(\d+)(?:st|nd|rd|th)?\s+([a-zA-Z]+|\d+)", msg_lower)) or any(m in msg_lower for m in ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec", "quarter", "quater"])
+        is_chart_query = any(k in msg_lower for k in ["chart", "graph", "bar chart", "visual", "visualize", "visualization", "pie chart", "trend", "breakdown"])
+        is_report_query = is_chart_query or has_date_in_msg or any(k in msg_lower for k in ["how many", "count", "added on", "added in", "report", "added", "list", "show me", "show", "data of", "data for", "details for"])
+        
         if is_report_query:
             import re
+            target_day = None
+            target_month = None
+            target_year = None
             target_date_str = None
             target_months = []
-            
-            # Check for quarter query filters
+
             if "last quarter" in msg_lower or "last quater" in msg_lower or "previous quarter" in msg_lower or "prev quarter" in msg_lower:
                 target_months = ["Apr", "May", "Jun"]
                 target_date_str = "Last Quarter (Q2 2026)"
@@ -290,18 +325,42 @@ class AgentService:
 
             if not target_date_str:
                 months_map = {
-                    "jan": "01", "feb": "02", "mar": "03", "apr": "04", "may": "05", "jun": "06",
-                    "jul": "07", "aug": "08", "sep": "09", "oct": "10", "nov": "11", "dec": "12"
+                    "jan": "Jan", "january": "Jan", "feb": "Feb", "february": "Feb",
+                    "mar": "Mar", "march": "Mar", "apr": "Apr", "april": "Apr",
+                    "may": "May", "jun": "Jun", "june": "Jun", "jul": "Jul", "july": "Jul",
+                    "aug": "Aug", "august": "Aug", "sep": "Sep", "september": "Sep",
+                    "oct": "Oct", "october": "Oct", "nov": "Nov", "november": "Nov",
+                    "dec": "Dec", "december": "Dec"
                 }
-                # Look for 30th july 2026 or similar
-                date_match = re.search(r"(\d+)(?:st|nd|rd|th)?\s+([a-zA-Z]+)\s+(\d{4})", msg_lower)
-                if date_match:
-                    day = date_match.group(1).zfill(2)
-                    month_name = date_match.group(2)[:3]
-                    year = date_match.group(3)
-                    if month_name in months_map:
-                        target_date_str = f"{day}-{month_name.capitalize()}-{year}"
-            
+                m1 = re.search(r"(\d+)(?:st|nd|rd|th)?\s+([a-zA-Z]+)(?:\s+(\d{4}))?", msg_lower)
+                m2 = re.search(r"([a-zA-Z]+)\s+(\d+)(?:st|nd|rd|th)?(?:\s+(\d{4}))?", msg_lower)
+                m3 = re.search(r"(\d{1,2})[-/](\d{1,2}|[a-zA-Z]+)[-/](\d{2,4})", msg_lower)
+
+                if m1 and m1.group(2)[:3].lower() in months_map:
+                    target_day = int(m1.group(1))
+                    target_month = months_map[m1.group(2)[:3].lower()]
+                    target_year = m1.group(3) or "2026"
+                elif m2 and m2.group(1)[:3].lower() in months_map:
+                    target_month = months_map[m2.group(1)[:3].lower()]
+                    target_day = int(m2.group(2))
+                    target_year = m2.group(3) or "2026"
+                elif m3:
+                    target_day = int(m3.group(1))
+                    m_part = m3.group(2)
+                    y = m3.group(3)
+                    if len(y) == 2: y = "20" + y
+                    target_year = y
+                    if m_part.isdigit():
+                        rev_map = {1:"Jan", 2:"Feb", 3:"Mar", 4:"Apr", 5:"May", 6:"Jun", 7:"Jul", 8:"Aug", 9:"Sep", 10:"Oct", 11:"Nov", 12:"Dec"}
+                        target_month = rev_map.get(int(m_part), "Feb")
+                    elif m_part[:3].lower() in months_map:
+                        target_month = months_map[m_part[:3].lower()]
+
+                if target_day and target_month:
+                    target_date_str = f"{str(target_day).zfill(2)}-{target_month}-{target_year or '2026'}"
+                elif target_month:
+                    target_date_str = f"{target_month} {target_year or '2026'}"
+
             # Extract technology (e.g. account, developer, python, mern)
             target_tech = None
             tech_match = re.search(r"(?:for|in)\s+([a-zA-Z\s]+?)(?:\s+technology|\s+tech|$)", msg_lower)
@@ -314,7 +373,8 @@ class AgentService:
                         break
 
             # Fetch all candidates using tool
-            args = {"sheet_name": "Master Recruitment Tracker 2026"}
+            active_sheet = sheet_id or "1Eb-hdgR2K9Es3y-INU8YmE5yFGg0I56psxaLYLuILCQ"
+            args = {"sheet_name": "Master Recruitment Tracker 2026", "sheet_id": active_sheet}
             res = await mcp_client.execute_tool("read_sheet", args)
             steps.append({"tool": "read_sheet", "arguments": args, "status": "success", "response": res})
             
@@ -326,31 +386,31 @@ class AgentService:
             elif isinstance(res, dict) and "value" in res:
                 all_emps = res["value"]
 
-            # Filter candidates
+            # Filter candidates using robust date matching
             matched_candidates = []
             for emp in all_emps:
                 emp_date = (emp.get("joining_date") or "").strip()
                 emp_tech = (emp.get("designation") or "").strip().lower()
                 
-                # Check date match
                 date_ok = True
-                if target_date_str:
+                if target_date_str or target_months or target_day or target_month:
                     if target_months:
-                        # Match Q2 or Q3 months for year 2026 (or 2025/2026)
-                        # google sheet dates are written like "1-Jan-2025" or "15-Apr-2026"
-                        is_correct_year = "2026" in emp_date
+                        is_correct_year = "2026" in emp_date or "2025" in emp_date
                         is_correct_month = any(m.lower() in emp_date.lower() for m in target_months)
                         date_ok = (is_correct_year and is_correct_month)
                     else:
-                        # target_date_str is e.g. "30-Jul-2026". Check if day "30" and month "Jul" are in emp_date
-                        day_clean = target_date_str.split('-')[0]
-                        month_clean = target_date_str.split('-')[1]
-                        date_ok = (day_clean in emp_date and month_clean.lower() in emp_date.lower())
-                
-                # Check tech match
+                        emp_clean = emp_date.lower()
+                        if target_month and target_month[:3].lower() not in emp_clean:
+                            date_ok = False
+                        if date_ok and target_day is not None:
+                            d_str = str(target_day)
+                            d_padded = d_str.zfill(2)
+                            day_pattern = rf"(?:^|[^\d])({d_str}|{d_padded})(?:[^\d]|$)"
+                            if not re.search(day_pattern, emp_clean):
+                                date_ok = False
+
                 tech_ok = True
                 if target_tech:
-                    # Use a broader match, e.g. "account" matches "Accounts" or "accounting"
                     tech_ok = (target_tech.lower() in emp_tech or emp_tech in target_tech.lower())
                 
                 if date_ok and tech_ok:
