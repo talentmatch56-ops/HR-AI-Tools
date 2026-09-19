@@ -1559,30 +1559,10 @@ export default function DashboardPage() {
               </button>
             )}
 
-            {/* SUB-SHEET TAB SELECTOR IN TOP HEADER BAR (ALWAYS VISIBLE) */}
-            <div className="flex items-center gap-1.5 ml-auto sm:ml-4 bg-blue-50/90 border border-blue-200/80 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-xl shadow-xs max-w-[150px] sm:max-w-xs">
-              <span className="text-[10px] font-bold text-blue-800 uppercase tracking-wider shrink-0 hidden sm:inline">
-                Sub-Sheet:
-              </span>
-              <select
-                value={activeTabName}
-                onChange={(e) => {
-                  const tabVal = e.target.value
-                  setActiveTabName(tabVal)
-                  fetchEmployees(token, searchQuery, activeSheetId, tabVal)
-                }}
-                className="bg-white border border-blue-300 text-blue-900 text-xs font-bold py-1 px-1.5 sm:px-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs cursor-pointer truncate max-w-[130px] sm:max-w-xs"
-              >
-                {(availableTabs.length > 0 ? availableTabs : ['Master Recruitment Tracker 2026', 'Shortlisting Tracker 2026', 'Job Opening Tracker 2026']).map((t, idx) => (
-                  <option key={idx} value={t}>{t}</option>
-                ))}
-              </select>
-            </div>
-
             {/* TOP HEADER SIGN OUT BUTTON (ALWAYS ACCESSIBLE IN PWA & MOBILE) */}
             <button
               onClick={handleLogout}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-[11px] font-bold transition-all bg-white border-slate-200 hover:border-red-300 hover:bg-red-50 text-slate-700 hover:text-red-600 shadow-xs shrink-0 cursor-pointer"
+              className="flex items-center gap-1.5 ml-auto px-2.5 py-1 rounded-xl border text-[11px] font-bold transition-all bg-white border-slate-200 hover:border-red-300 hover:bg-red-50 text-slate-700 hover:text-red-600 shadow-xs shrink-0 cursor-pointer"
               title="Sign Out of HR Workspace"
             >
               <LogOut className="w-3.5 h-3.5 text-slate-500" />
