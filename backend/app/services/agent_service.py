@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import logging
 from datetime import datetime
@@ -361,20 +362,33 @@ class AgentService:
                 elif target_month:
                     target_date_str = f"{target_month} {target_year or '2026'}"
 
-            # Extract technology (e.g. account, developer, python, mern)
+            # Extract technology accurately avoiding date/month/stop words
+            ignored_tech_words = [
+                "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec",
+                "january", "february", "march", "april", "june", "july", "august", "september", "october", "november", "december",
+                "date", "dates", "quarter", "quater", "today", "yesterday", "tomorrow", "any", "all", "the", "a", "an", "for", "in"
+            ]
             target_tech = None
-            tech_match = re.search(r"(?:for|in)\s+([a-zA-Z\s]+?)(?:\s+technology|\s+tech|$)", msg_lower)
-            if tech_match:
-                target_tech = tech_match.group(1).strip()
-            else:
-                for t in ["account", "python", "mern", "bde", "frontend", "ui/ux", "ba"]:
-                    if t in msg_lower:
-                        target_tech = t
-                        break
+            known_techs = ["java", "python", "react", "node", "mern", "frontend", "backend", "full stack", "fullstack", "ui/ux", "devops", "qa", "testing", "bde", "account", "ba", "sales"]
+            for kt in known_techs:
+                if kt in msg_lower:
+                    target_tech = kt
+                    break
 
-            # Fetch all candidates using tool
-            active_sheet = sheet_id or "1Eb-hdgR2K9Es3y-INU8YmE5yFGg0I56psxaLYLuILCQ"
-            args = {"sheet_name": "Master Recruitment Tracker 2026", "sheet_id": active_sheet}
+            if not target_tech:
+                tech_match = re.search(r"(?:for|in)\s+([a-zA-Z\s]+?)(?:\s+technology|\s+tech|$)", msg_lower)
+                if tech_match:
+                    cand_t = tech_match.group(1).strip()
+                    if cand_t.lower() not in ignored_tech_words and not any(m in cand_t.lower() for m in months_map.keys()):
+                        target_tech = cand_t
+
+            if target_tech and target_tech.lower() in ["any", "all"]:
+                target_tech = None
+
+            # Fetch all candidates using tool across All Tabs
+            default_sheet_id = os.getenv("GOOGLE_SHEET_ID", "1PFnlXR42tsxS9UAIqf4vpEUfe-b0G9GasNNEmk6EIjc")
+            active_sheet = sheet_id or default_sheet_id
+            args = {"sheet_name": "All Tabs", "sheet_id": active_sheet}
             res = await mcp_client.execute_tool("read_sheet", args)
             steps.append({"tool": "read_sheet", "arguments": args, "status": "success", "response": res})
             
@@ -385,28 +399,41 @@ class AgentService:
                 all_emps = res["data"]
             elif isinstance(res, dict) and "value" in res:
                 all_emps = res["value"]
+            elif isinstance(res, dict) and "result" in res:
+                all_emps = res["result"] if isinstance(res["result"], list) else []
 
-            # Filter candidates using robust date matching
+            # Filter candidates using robust multi-field date matching
             matched_candidates = []
             for emp in all_emps:
-                emp_date = (emp.get("joining_date") or "").strip()
+                date_vals = [
+                    emp.get("joining_date"),
+                    emp.get("date"),
+                    emp.get("Date"),
+                    emp.get("Open Date"),
+                    emp.get("Close Date"),
+                    emp.get("1st Round Interview Date"),
+                    emp.get("Interview (2nd / Final Round) Date"),
+                    emp.get("Joining Date"),
+                    emp.get("offered_joining_date"),
+                    emp.get("Month")
+                ]
+                emp_dates_combined = " ".join(str(v) for v in date_vals if v).lower()
                 emp_tech = (emp.get("designation") or "").strip().lower()
                 
                 date_ok = True
                 if target_date_str or target_months or target_day or target_month:
                     if target_months:
-                        is_correct_year = "2026" in emp_date or "2025" in emp_date
-                        is_correct_month = any(m.lower() in emp_date.lower() for m in target_months)
+                        is_correct_year = "2026" in emp_dates_combined or "2025" in emp_dates_combined
+                        is_correct_month = any(m.lower() in emp_dates_combined for m in target_months)
                         date_ok = (is_correct_year and is_correct_month)
                     else:
-                        emp_clean = emp_date.lower()
-                        if target_month and target_month[:3].lower() not in emp_clean:
+                        if target_month and target_month[:3].lower() not in emp_dates_combined:
                             date_ok = False
                         if date_ok and target_day is not None:
                             d_str = str(target_day)
                             d_padded = d_str.zfill(2)
                             day_pattern = rf"(?:^|[^\d])({d_str}|{d_padded})(?:[^\d]|$)"
-                            if not re.search(day_pattern, emp_clean):
+                            if not re.search(day_pattern, emp_dates_combined):
                                 date_ok = False
 
                 tech_ok = True
@@ -495,7 +522,6 @@ class AgentService:
                 # In async context, use already-loaded sheet data via synchronous helper
                 if _res is None:
                     # Already in async context — use sync path via mcp_client's tool fn directly
-                    import sys, os
                     _srv_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "mcp-server"))
                     if _srv_dir not in sys.path:
                         sys.path.insert(0, _srv_dir)

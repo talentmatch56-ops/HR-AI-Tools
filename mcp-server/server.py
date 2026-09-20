@@ -19,8 +19,8 @@ sheets = GoogleSheetsHelper()
 gmail = GmailHelper()
 docs = DocumentGenerator()
 
-def compact_json(data: Any, max_items: int = 40) -> str:
-    """Format tool responses into ultra-compact JSON to minimize LLM token latency."""
+def compact_json(data: Any, max_items: int = 10000) -> str:
+    """Format tool responses into compact JSON without arbitrary row truncation."""
     if isinstance(data, list):
         cleaned = []
         for item in data[:max_items]:
